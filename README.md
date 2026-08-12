@@ -57,3 +57,4 @@ webhook forwarding) is needed once `api/` exists — see that doc.
   coding conventions for this repo.
 - [`docs/SRS.md`](docs/SRS.md) — the source of truth for architecture, entities, and
   workflows. If anything is ambiguous, this document wins.
+# kic_system
