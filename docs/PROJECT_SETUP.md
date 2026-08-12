@@ -33,6 +33,54 @@ Companion to `CLAUDE.md` and `BUILD_PROMPTS.md`. Save as `docs/PROJECT_SETUP.md`
 
 ---
 
+## 2.1 First run — local stack
+
+The local stack (`docker-compose.yml` at the repo root) brings up Postgres+PostGIS, Redis,
+MinIO (S3), and Mailpit. It comes up **before** `api/` and `web/` are scaffolded — it has
+no dependency on either.
+
+1. Copy the compose env file and adjust credentials if you want non-default ones:
+   ```bash
+   cp .env.example .env
+   ```
+2. Start everything:
+   ```bash
+   make up          # or: docker compose up -d
+   ```
+3. Confirm all services are healthy:
+   ```bash
+   docker compose ps
+   ```
+   Every service should show `healthy`. `createbuckets` is a one-shot job — it exits `0`
+   after creating the `marketplace-local` bucket and won't show as running; check its exit
+   code with `docker compose logs createbuckets` if the bucket isn't there.
+4. Verify PostGIS is actually installed in the database:
+   ```bash
+   make psql
+   ```
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS postgis;
+   SELECT postgis_version();
+   ```
+5. Open the MinIO console at http://localhost:9001 (see §2.2 for credentials) and confirm
+   the `marketplace-local` bucket exists.
+6. `make fresh` wipes all named volumes (`down -v`) and starts clean — use it when you need
+   a truly empty database/bucket, not for routine restarts (`make down` / `make up` is
+   enough for those and preserves data).
+
+## 2.2 Reaching each service
+
+| Service | URL / address | Credentials | Notes |
+|---|---|---|---|
+| Postgres + PostGIS | `localhost:5432` | `DB_USERNAME` / `DB_PASSWORD` from `.env` (default `marketplace` / `marketplace`), db `marketplace` | `make psql` opens a shell |
+| Redis | `localhost:6379` | none (local dev only) | DB 0 = cache, 1 = queue, 2 = session (app-level split, not container-level). `make redis-cli` opens a shell |
+| MinIO API (S3-compatible) | http://localhost:9000 | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` from `.env` | This is `AWS_ENDPOINT` in `api/.env` |
+| MinIO Console | http://localhost:9001 | same as above | Browse/manage the `marketplace-local` bucket |
+| Mailpit SMTP | `localhost:1025` | none | This is `MAIL_HOST`/`MAIL_PORT` in `api/.env` |
+| Mailpit UI | http://localhost:8025 | none | View every email the app sends locally |
+
+---
+
 ## 3. Environment variables
 
 ### `api/.env`

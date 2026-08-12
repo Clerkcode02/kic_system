@@ -31,16 +31,25 @@ CLAUDE.md           # operating manual for AI-assisted development in this repo
 
 ## Local stack
 
-The full local environment (PostgreSQL + PostGIS, Redis, MinIO for S3, Mailpit, and
-Stripe CLI for webhook forwarding) runs via Docker Compose once the `api` and `web` apps
-are scaffolded:
+The local environment — PostgreSQL + PostGIS, Redis, MinIO (S3-compatible storage), and
+Mailpit (SMTP catcher) — runs via Docker Compose and doesn't depend on `api`/`web` being
+scaffolded yet:
 
 ```bash
-docker compose up -d
+cp .env.example .env
+make up          # or: docker compose up -d
 ```
 
-See [`docs/PROJECT_SETUP.md`](docs/PROJECT_SETUP.md) for the full environment variable
-list and third-party account checklist.
+| Service | URL |
+|---|---|
+| MinIO console | http://localhost:9001 |
+| Mailpit UI | http://localhost:8025 |
+| Postgres | `localhost:5432` (`make psql`) |
+| Redis | `localhost:6379` (`make redis-cli`) |
+
+See [`docs/PROJECT_SETUP.md`](docs/PROJECT_SETUP.md) for first-run steps, the full
+environment variable list, and the third-party account checklist. The Stripe CLI (for
+webhook forwarding) is needed once `api/` exists — see that doc.
 
 ## Where to start
 
