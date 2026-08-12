@@ -84,7 +84,8 @@ return [
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
-    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    // Canada-only market for launch (CLAUDE.md §5) — demo/test data should look Canadian.
+    'faker_locale' => env('APP_FAKER_LOCALE', 'en_CA'),
 
     /*
     |--------------------------------------------------------------------------

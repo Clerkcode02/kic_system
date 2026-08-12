@@ -231,6 +231,21 @@ Four separate concerns, each with the lightest tool:
 4. **Radius search** — PostGIS `ST_DWithin` against `businesses.location
    geography(Point,4326)`, GIST-indexed.
 
+### Market scope
+**Canada-only for launch.** All location, map, geocoding, currency, and payment logic
+should assume Canada as the sole market unless explicitly told otherwise.
+
+- Leaflet `maxBounds` and default `setView` are scoped to Canada's bounding box.
+- Geoapify/LocationIQ geocoding calls are biased/filtered to Canada — never geocode
+  against the whole world.
+- Currency is CAD only, no multi-currency handling yet.
+- Stripe Connect onboarding assumes Canadian connected accounts only.
+
+Don't build multi-country abstractions (currency switching, i18n address formats,
+per-country tax/licensing logic) preemptively — Canada-only is a hard constraint for
+Phase 1, not a placeholder to generalize around. If a request implies expanding beyond
+Canada, stop and ask.
+
 ---
 
 ## 6. Coding conventions
