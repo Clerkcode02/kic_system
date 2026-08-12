@@ -1,0 +1,197 @@
+%% Multi-Service Marketplace Platform — ERD (SRS §2)
+%% All PKs are UUIDv7. Money is decimal(12,2). PAYMENTS and REVIEWS are polymorphic.
+erDiagram
+    USERS ||--o{ BUSINESSES : owns
+    USERS ||--o{ FREELANCER_PROFILES : has
+    USERS ||--o{ BOOKINGS : "requests as customer"
+    USERS ||--o{ ADDRESSES : has
+    BUSINESSES ||--o{ SERVICES : offers
+    BUSINESSES ||--o{ BUSINESS_DOCUMENTS : uploads
+    BUSINESSES ||--o{ PROVIDER_AVAILABILITY : defines
+    FREELANCER_PROFILES ||--o{ FREELANCER_SKILLS : lists
+    FREELANCER_PROFILES ||--o{ PORTFOLIO_ITEMS : shows
+    CATEGORIES ||--o{ CATEGORIES : "parent/child"
+    CATEGORIES ||--o{ SERVICES : classifies
+    SERVICES ||--o{ SERVICE_PRICING_TIERS : has
+    SERVICES ||--o{ BOOKINGS : "booked as"
+    BOOKINGS ||--o{ QUOTATIONS : receives
+    BOOKINGS ||--o{ BOOKING_STATUS_HISTORY : logs
+    BOOKINGS ||--o{ BOOKING_ATTACHMENTS : has
+    BOOKINGS ||--|| PAYMENTS : "paid via"
+    QUOTATIONS ||--o{ QUOTATION_LINE_ITEMS : itemizes
+    PROJECTS ||--o{ PROPOSALS : receives
+    PROJECTS ||--o{ MILESTONES : "broken into"
+    PROJECTS ||--o| CONTRACTS : "results in"
+    PROPOSALS }o--|| FREELANCER_PROFILES : "submitted by"
+    CONTRACTS ||--o{ MILESTONES : tracks
+    MILESTONES ||--o{ DELIVERABLES : "submitted for"
+    MILESTONES ||--o| PAYMENTS : "released via"
+    PAYMENTS ||--o{ PAYOUTS : "settled into"
+    PAYMENTS ||--o{ REFUNDS : "may have"
+    USERS ||--o{ REVIEWS : writes
+    REVIEWS }o--|| BOOKINGS : "for"
+    REVIEWS }o--|| PROJECTS : "for"
+    USERS ||--o{ NOTIFICATIONS : receives
+    USERS ||--o{ AUDIT_LOGS : "acted by"
+    DISPUTES }o--|| BOOKINGS : "raised on"
+    DISPUTES }o--|| PROJECTS : "raised on"
+
+    USERS {
+        uuid id PK
+        string name
+        string email UK
+        string phone UK
+        enum role "customer|provider|freelancer|admin"
+        string password
+        timestamp email_verified_at
+        timestamp phone_verified_at
+        enum status "active|suspended|pending"
+        timestamps created_at_updated_at
+    }
+    BUSINESSES {
+        uuid id PK
+        uuid user_id FK
+        string legal_name
+        string registration_number UK
+        enum verification_status "pending|verified|rejected"
+        jsonb business_hours
+        decimal rating_avg
+        integer max_bookings_per_day
+        geography location "Point,4326 — service location, set via Leaflet draggable pin + geocoded address; used by PostGIS ST_DWithin radius search"
+        timestamps created_at_updated_at
+    }
+    CATEGORIES {
+        uuid id PK
+        uuid parent_id FK "nullable, self-ref"
+        string name
+        string slug UK
+        string icon
+        boolean is_active
+        integer sort_order
+    }
+    SERVICES {
+        uuid id PK
+        uuid business_id FK
+        uuid category_id FK
+        string title
+        text description
+        enum pricing_type "hourly|fixed|package|inspection"
+        decimal base_price
+        integer estimated_duration_minutes
+        boolean is_active
+    }
+    BOOKINGS {
+        uuid id PK
+        string booking_number UK
+        uuid customer_id FK
+        uuid provider_id FK
+        uuid service_id FK
+        date scheduled_date
+        time time_slot_start
+        time time_slot_end
+        uuid address_id FK
+        decimal lat
+        decimal lng
+        text notes
+        enum status
+        enum payment_status "unpaid|partial|paid|refunded"
+        timestamps created_at_updated_at
+    }
+    QUOTATIONS {
+        uuid id PK
+        uuid booking_id FK
+        decimal labor_cost
+        decimal materials_cost
+        decimal additional_fees
+        decimal platform_fee
+        decimal tax_amount
+        decimal discount_amount
+        decimal total_amount
+        timestamp valid_until
+        integer revision_number
+        enum status "sent|accepted|rejected|expired|superseded"
+    }
+    PROJECTS {
+        uuid id PK
+        uuid client_id FK
+        uuid category_id FK
+        string title
+        text description
+        decimal budget_min
+        decimal budget_max
+        date deadline
+        enum status "open|in_progress|completed|cancelled"
+    }
+    PROPOSALS {
+        uuid id PK
+        uuid project_id FK
+        uuid freelancer_id FK
+        decimal proposed_amount
+        text cover_letter
+        integer delivery_days
+        enum status "submitted|shortlisted|accepted|rejected|withdrawn"
+    }
+    CONTRACTS {
+        uuid id PK
+        uuid project_id FK
+        uuid proposal_id FK
+        decimal total_amount
+        enum status "active|completed|terminated"
+    }
+    MILESTONES {
+        uuid id PK
+        uuid contract_id FK
+        string title
+        decimal amount
+        date due_date
+        enum status "pending|submitted|approved|paid|disputed"
+    }
+    PAYMENTS {
+        uuid id PK
+        string payable_type "polymorphic: booking|milestone"
+        uuid payable_id
+        string stripe_payment_intent_id
+        decimal amount
+        decimal platform_fee_amount
+        decimal provider_net_amount
+        enum type "full|deposit|partial|escrow"
+        enum status "pending|succeeded|failed|refunded|disputed"
+    }
+    PAYOUTS {
+        uuid id PK
+        uuid provider_id FK
+        decimal amount
+        string stripe_transfer_id
+        enum status "scheduled|processing|paid|failed"
+    }
+    REVIEWS {
+        uuid id PK
+        uuid reviewer_id FK
+        uuid reviewee_id FK
+        string reviewable_type "booking|project"
+        uuid reviewable_id
+        tinyint rating
+        text comment
+        text provider_reply
+        timestamp edit_locked_at
+    }
+    AUDIT_LOGS {
+        uuid id PK
+        uuid actor_id FK
+        string action
+        string auditable_type
+        uuid auditable_id
+        jsonb before_state
+        jsonb after_state
+        string ip_address
+        timestamp created_at
+    }
+    DISPUTES {
+        uuid id PK
+        string disputable_type "booking|project"
+        uuid disputable_id
+        uuid raised_by FK
+        enum status "open|under_review|resolved|closed"
+        text resolution_notes
+    }
+```

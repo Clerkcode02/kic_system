@@ -1,0 +1,53 @@
+# Env
+.env
+.env.*
+!.env.example
+
+# PHP / Laravel (api/)
+/api/vendor/
+/api/node_modules/
+/api/public/hot
+/api/public/storage
+/api/storage/*.key
+/api/storage/app/*
+!/api/storage/app/public
+/api/storage/framework/cache/*
+!/api/storage/framework/cache/.gitignore
+/api/storage/framework/sessions/*
+!/api/storage/framework/sessions/.gitignore
+/api/storage/framework/testing/*
+!/api/storage/framework/testing/.gitignore
+/api/storage/framework/views/*
+!/api/storage/framework/views/.gitignore
+/api/storage/logs/*
+!/api/storage/logs/.gitignore
+/api/bootstrap/cache/*
+!/api/bootstrap/cache/.gitignore
+/api/.phpunit.cache
+/api/Homestead.json
+/api/Homestead.yaml
+/api/auth.json
+
+# Node / React (web/)
+/web/node_modules/
+/web/dist/
+/web/build/
+/web/.vite/
+/web/coverage/
+
+# Node (generic)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Docker
+docker-compose.override.yml

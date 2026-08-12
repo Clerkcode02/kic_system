@@ -1,0 +1,56 @@
+Laravel module structure — SRS §3
+
+app/
+├── Domain/
+│   ├── User/
+│   │   ├── Models/ (User, Address)
+│   │   ├── Actions/ (RegisterCustomer, RegisterBusiness, RegisterFreelancer)
+│   │   ├── Policies/
+│   │   └── Events/ (UserRegistered, UserVerified)
+│   ├── Business/
+│   │   ├── Models/ (Business, BusinessDocument, ProviderAvailability)
+│   │   ├── Actions/ (SubmitForVerification, ApproveBusiness, RejectBusiness)
+│   │   └── Services/ (AvailabilityService)
+│   ├── Freelance/
+│   │   ├── Models/ (FreelancerProfile, PortfolioItem, Project, Proposal, Contract, Milestone, Deliverable)
+│   │   ├── Actions/ (PublishProject, SubmitProposal, HireFreelancer, SubmitMilestone, ApproveMilestone)
+│   │   └── StateMachines/ (ProjectStateMachine, MilestoneStateMachine)
+│   ├── Catalog/
+│   │   ├── Models/ (Category, Service, ServicePricingTier)
+│   │   └── Actions/ (CreateCategory, PublishService)
+│   ├── Booking/
+│   │   ├── Models/ (Booking, BookingStatusHistory, BookingAttachment)
+│   │   ├── Actions/ (CreateBookingRequest, TransitionBookingStatus, CancelBooking)
+│   │   ├── StateMachines/ (BookingStateMachine.php)
+│   │   └── Validators/ (BookingAvailabilityValidator, DoubleBookingValidator)
+│   ├── Quotation/
+│   │   ├── Models/ (Quotation, QuotationLineItem)
+│   │   ├── Actions/ (SendQuotation, AcceptQuotation, RejectQuotation, ReviseQuotation)
+│   │   └── Jobs/ (ExpireStaleQuotations)
+│   ├── Payment/
+│   │   ├── Models/ (Payment, Payout, Refund)
+│   │   ├── Services/ (StripePaymentService, StripeConnectPayoutService, EscrowService)
+│   │   ├── Actions/ (CapturePayment, IssueRefund, ReleaseMilestoneEscrow)
+│   │   └── Webhooks/ (StripeWebhookController)
+│   ├── Review/
+│   │   ├── Models/ (Review)
+│   │   └── Actions/ (SubmitReview, ReplyToReview)
+│   ├── Notification/
+│   │   ├── Notifications/ (BookingCreated, QuotationSent, PaymentSucceeded, …)
+│   │   └── Channels/ (WebPushChannel, SmsChannel)
+│   ├── Dispute/
+│   │   ├── Models/ (Dispute)
+│   │   └── Actions/ (RaiseDispute, ResolveDispute)
+│   └── Audit/
+│       ├── Models/ (AuditLog)
+│       └── Listeners/ (RecordAuditEntry — subscribes to all domain events)
+├── Http/
+│   ├── Controllers/Api/{Customer,Provider,Freelancer,Admin}/...
+│   ├── Requests/  (FormRequest per action, one class per validated intent)
+│   ├── Resources/ (API Resources — one per read model)
+│   └── Middleware/ (EnsureVerified, EnsureNotSuspended, RoleMiddleware)
+├── Policies/
+├── Providers/
+└── Console/
+    ├── Commands/ (ExpireQuotations, RunPayoutBatch, SendBookingReminders)
+    └── Kernel.php (scheduler definitions)

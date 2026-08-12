@@ -1,0 +1,61 @@
+%% State machines — SRS §8, §9, §10
+%% Each diagram maps to a StateMachine class in app/Domain/*/StateMachines/.
+
+%% ---------- Booking (§8) ----------
+stateDiagram-v2
+    [*] --> Pending: Customer submits booking request
+    Pending --> WaitingForQuotation: Auto (service requires quote)
+    Pending --> Scheduled: Auto (fixed-price service, no quote needed)
+    WaitingForQuotation --> QuotationSent: Provider sends quotation
+    QuotationSent --> WaitingForCustomer: notify customer
+    WaitingForCustomer --> Accepted: Customer accepts + pays
+    WaitingForCustomer --> Declined: Customer rejects
+    WaitingForCustomer --> WaitingForQuotation: Customer requests revision
+    WaitingForCustomer --> QuotationExpired: valid_until passed
+    Accepted --> Scheduled: payment confirmed
+    Scheduled --> InProgress: provider starts (check-in)
+    InProgress --> Completed: provider marks complete + customer confirms
+    Scheduled --> Cancelled: cancel by customer/provider (policy applied)
+    InProgress --> Cancelled: exceptional cancellation (admin-mediated)
+    Completed --> Refunded: admin-approved refund
+    Declined --> [*]
+    QuotationExpired --> [*]
+    Cancelled --> [*]
+    Refunded --> [*]
+    Completed --> [*]
+
+%% ---------- Quotation (§9) ----------
+%% Reminders: T-24h and T-2h before valid_until -> customer; provider reminded daily
+%% if no quotation within 48h; booking auto-expires after 5 days. Both admin-configurable.
+stateDiagram-v2
+    [*] --> Sent: Provider submits quotation
+    Sent --> Accepted: Customer accepts
+    Sent --> Rejected: Customer rejects
+    Sent --> Superseded: Provider/customer requests revision → new quotation created
+    Sent --> Expired: valid_until reached (scheduled job)
+    Rejected --> Sent: Provider resends revised quote (new record, revision_number+1)
+    Accepted --> [*]
+    Rejected --> [*]: if customer cancels booking entirely
+    Expired --> [*]
+
+%% ---------- Freelancer project + milestones (§10) ----------
+%% Hiring is exclusive per project: HireFreelancer wraps Project+Proposal in a transaction
+%% with lockForUpdate on the project; other open proposals auto-reject with notification.
+stateDiagram-v2
+    [*] --> Open: Client publishes project
+    Open --> InProgress: Client hires a freelancer (Contract created)
+    InProgress --> Completed: all milestones approved & paid
+    Open --> Cancelled: client cancels before hire
+    InProgress --> Cancelled: mutual cancellation / dispute resolution
+    Completed --> [*]
+    Cancelled --> [*]
+
+    state InProgress {
+        [*] --> MilestonePending
+        MilestonePending --> MilestoneSubmitted: freelancer submits deliverable
+        MilestoneSubmitted --> MilestoneApproved: client approves
+        MilestoneSubmitted --> MilestoneDisputed: client rejects
+        MilestoneDisputed --> MilestoneSubmitted: freelancer resubmits
+        MilestoneApproved --> MilestonePaid: escrow released
+        MilestonePaid --> [*]
+    }

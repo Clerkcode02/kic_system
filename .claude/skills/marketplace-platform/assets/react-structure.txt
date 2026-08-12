@@ -1,0 +1,62 @@
+Web React structure — SRS §4
+
+src/
+├── app/                        # app shell, providers, router
+│   ├── routes/
+│   │   ├── customer/
+│   │   ├── provider/
+│   │   ├── freelancer/
+│   │   └── admin/
+│   └── providers/ (AuthProvider, QueryClientProvider, ToastProvider)
+├── features/                   # feature-sliced, mirrors backend domains
+│   ├── auth/
+│   ├── booking/
+│   │   ├── components/ (BookingWizard, ScheduleStep,
+│   │   │                 LocationStep — Leaflet draggable pin + address field,
+│   │   │                 geocoded via Geoapify/LocationIQ on submit)
+│   │   ├── hooks/ (useCreateBooking, useBookingStatus)
+│   │   └── api/ (bookingApi.ts)
+│   ├── quotation/
+│   ├── catalog/
+│   ├── freelance/
+│   │   ├── projects/
+│   │   ├── proposals/
+│   │   └── milestones/
+│   ├── payments/ (StripeCheckoutForm, PayoutDashboard)
+│   ├── reviews/
+│   ├── notifications/
+│   └── admin/ (BusinessApprovalQueue, DisputeManager, AnalyticsDashboard)
+├── components/                 # shared/dumb UI (design-system layer)
+├── lib/
+│   ├── api/ (axios instance, interceptors, error normalization)
+│   ├── maps/ (Leaflet draggable-pin map component, useBrowserGeolocation hook,
+│   │          Geoapify/LocationIQ geocoding client — called only on form submit)
+│   └── calendar/ (FullCalendar config + adapters)
+├── types/                      # shared TS types, generated from OpenAPI if possible
+└── stores/                     # Zustand/Redux slices for cross-cutting client state
+
+
+Mobile React Native structure — SRS §23.3 (mirrors the web layout above)
+
+mobile/
+├── app/                         # Expo Router / navigation, providers
+│   ├── (customer)/
+│   ├── (provider)/
+│   └── (freelancer)/
+│   └── providers/ (AuthProvider — token-based, QueryClientProvider, PushProvider)
+├── features/                    # same feature-sliced split as web src/features/
+│   ├── auth/                    # login/register, secure token storage
+│   ├── booking/
+│   │   ├── components/ (BookingWizard, ScheduleStep — react-native-calendars,
+│   │   │                 LocationStep — Leaflet-in-WebView draggable pin)
+│   │   ├── hooks/ (useCreateBooking, useBookingStatus — same TanStack Query hooks pattern)
+│   │   └── api/ (bookingApi.ts — same request shape as web's bookingApi.ts)
+│   ├── quotation/ ├── catalog/ ├── freelance/ ├── payments/ (Stripe RN SDK)
+│   ├── reviews/ └── notifications/ (push permission + device registration)
+├── components/                  # shared/dumb UI, native equivalents of the web design system
+├── lib/
+│   ├── api/ (axios instance + interceptors — attaches Bearer token, not cookies)
+│   ├── maps/ (WebView wrapper embedding the same react-leaflet component as web,
+│   │          expo-location for device GPS, Geoapify/LocationIQ client — reused as-is)
+│   └── push/ (expo-notifications registration → POST /devices/register)
+└── types/                       # same generated OpenAPI types as web (shared package if a monorepo)
