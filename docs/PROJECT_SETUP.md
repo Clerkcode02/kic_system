@@ -72,7 +72,7 @@ no dependency on either.
 
 | Service | URL / address | Credentials | Notes |
 |---|---|---|---|
-| Postgres + PostGIS | `localhost:5432` | `DB_USERNAME` / `DB_PASSWORD` from `.env` (default `marketplace` / `marketplace`), db `marketplace` | `make psql` opens a shell |
+| Postgres + PostGIS | `localhost:5433` | `DB_USERNAME` / `DB_PASSWORD` from `.env` (default `marketplace` / `marketplace`), db `marketplace` | `make psql` opens a shell |
 | Redis | `localhost:6379` | none (local dev only) | DB 0 = cache, 1 = queue, 2 = session (app-level split, not container-level). `make redis-cli` opens a shell |
 | MinIO API (S3-compatible) | http://localhost:9000 | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` from `.env` | This is `AWS_ENDPOINT` in `api/.env` |
 | MinIO Console | http://localhost:9001 | same as above | Browse/manage the `marketplace-local` bucket |
@@ -97,7 +97,8 @@ FRONTEND_URL=http://localhost:5173
 # Database (PostGIS required)
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
-DB_PORT=5432
+DB_PORT=5433                  # 5432 is the typical default; changed to avoid clashing
+                               # with a native/Homebrew Postgres already on this machine
 DB_DATABASE=marketplace
 DB_USERNAME=marketplace
 DB_PASSWORD=

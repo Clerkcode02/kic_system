@@ -44,7 +44,7 @@ make up          # or: docker compose up -d
 |---|---|
 | MinIO console | http://localhost:9001 |
 | Mailpit UI | http://localhost:8025 |
-| Postgres | `localhost:5432` (`make psql`) |
+| Postgres | `localhost:5433` (`make psql`) |
 | Redis | `localhost:6379` (`make redis-cli`) |
 
 See [`docs/PROJECT_SETUP.md`](docs/PROJECT_SETUP.md) for first-run steps, the full
