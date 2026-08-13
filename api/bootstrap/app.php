@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Support\ConflictException;
 use App\Support\IllegalStateTransitionException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -19,7 +20,23 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->statefulApi();
+
+        $middleware->alias([
+            'verified.account' => \App\Http\Middleware\EnsureVerified::class,
+            'not-suspended' => \App\Http\Middleware\EnsureNotSuspended::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
+
+        // CLAUDE.md §4 — the standard stack for every authenticated write
+        // route: resolve the user, then reject unverified accounts, then
+        // reject suspended ones. Route-specific role gating is layered on
+        // top with the separate 'role:...' alias where needed.
+        $middleware->group('api.protected', [
+            'auth:sanctum',
+            'verified.account',
+            'not-suspended',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (ValidationException $e, Request $request) {
@@ -53,6 +70,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 'error' => 'illegal_state_transition',
                 'from' => $e->from,
                 'to' => $e->to,
+            ], 409);
+        });
+
+        $exceptions->render(function (ConflictException $e, Request $request) {
+            if (! $request->expectsJson() && ! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => $e->errorCode,
             ], 409);
         });
 

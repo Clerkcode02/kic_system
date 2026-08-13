@@ -26,6 +26,7 @@ use App\Domain\Platform\Models\PlatformSetting;
 use App\Domain\Quotation\Enums\QuotationStatus;
 use App\Domain\Quotation\Models\Quotation;
 use App\Domain\Review\Models\Review;
+use App\Domain\User\Enums\RoleName;
 use App\Domain\User\Models\Address;
 use App\Domain\User\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -46,17 +47,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->admin()->create([
+        $this->call(RoleAndPermissionSeeder::class);
+
+        $admin = User::factory()->admin()->create([
             'name' => 'Platform Admin',
             'email' => 'admin@example.com',
         ]);
+        $admin->assignRole(RoleName::SuperAdmin->value);
 
         $this->seedPlatformSettings();
 
         $categories = $this->seedCategories();
         $businesses = $this->seedBusinesses($categories);
+        $businesses->each(fn (Business $business) => $business->user->assignRole(RoleName::ProviderOwner->value));
+
         $customers = User::factory()->customer()->count(20)->create();
-        $customers->each(fn (User $customer) => Address::factory()->for($customer, 'user')->create());
+        $customers->each(function (User $customer) {
+            Address::factory()->for($customer, 'user')->create();
+            $customer->assignRole(RoleName::Customer->value);
+        });
 
         $freelancers = $this->seedFreelancers();
 
@@ -161,6 +170,7 @@ class DatabaseSeeder extends Seeder
     {
         return collect(range(1, 5))->map(function () {
             $user = User::factory()->freelancer()->create();
+            $user->assignRole(RoleName::Freelancer->value);
             $profile = FreelancerProfile::factory()->approved()->create(['user_id' => $user->id]);
 
             FreelancerSkill::factory()

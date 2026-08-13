@@ -63,6 +63,17 @@ function relationMethodsOf(string $modelClass): array
             continue;
         }
 
+        // spatie/laravel-permission's HasRoles::teams() is a deliberate
+        // `whereRaw('1 = 0')` no-op when teams are disabled (Config::teamsEnabled()
+        // is false here — CLAUDE.md doesn't call for multi-tenant teams) — it
+        // still builds its join against a `team_id` column that, correctly,
+        // was never migrated. Postgres validates the join's columns before the
+        // always-false WHERE short-circuits it, so touching this relation errors
+        // regardless of eager-loading discipline. Not one of our relations to prove.
+        if ($modelClass === App\Domain\User\Models\User::class && $method->getName() === 'teams') {
+            continue;
+        }
+
         $returnType = $method->getReturnType();
 
         if ($returnType instanceof ReflectionNamedType

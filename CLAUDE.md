@@ -47,6 +47,7 @@ Four account types: **Customer, Provider (Business), Freelancer, Administrator.*
 | Server state | TanStack Query | Never mirror server state into Zustand/Redux |
 | Forms | react-hook-form + zod | |
 | API docs/types | `dedoc/scramble` → OpenAPI → generated TS types | |
+| Mail | **Gmail API (OAuth2)** for production/staging | Not SMTP, not a third-party ESP (SES/Mailgun/Postmark); Mailpit is local-dev only, never a production transport |
 
 ### Hard "do not" list
 
@@ -61,6 +62,9 @@ Four account types: **Customer, Provider (Business), Freelancer, Administrator.*
   recomputed server-side before persisting or charging.
 - ❌ No WebSockets / live chat / offline sync — explicitly out of scope (SRS §23.5).
 - ❌ No microservices. Modular monolith for v1.
+- ❌ No SMS integration anywhere — not phone-based OTP, not a phone-verification-via-SMS
+  flow, not even a stubbed/log-driver SMS interface. Out of scope, full stop. `phone` on
+  the user record stays a plain contact field with no SMS-backed verification wired to it.
 
 ---
 

@@ -56,6 +56,12 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // The React SPA's origin. Email links (verification, password reset)
+    // point here rather than at the API — there are no server-rendered
+    // views, so the link must land on a frontend route that then calls
+    // the API endpoint with the same signed id/hash/expires/signature.
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

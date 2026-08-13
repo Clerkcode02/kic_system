@@ -11,8 +11,11 @@ use App\Domain\Freelance\Models\FreelancerProfile;
 use App\Domain\Notification\Models\NotificationPreference;
 use App\Domain\User\Enums\UserRole;
 use App\Domain\User\Enums\UserStatus;
+use App\Domain\User\Notifications\VerifyEmailNotification;
 use App\Support\Concerns\HasUuidv7;
 use Database\Factories\UserFactory;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -20,15 +23,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens;
 
     /** @use HasFactory<UserFactory> */
     use HasFactory;
 
+    use HasRoles;
     use HasUuidv7;
+    use MustVerifyEmailTrait;
     use Notifiable;
     use SoftDeletes;
 
@@ -64,6 +70,11 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'status' => UserStatus::class,
         ];
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification());
     }
 
     /**

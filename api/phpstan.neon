@@ -11,3 +11,20 @@ parameters:
     level: 6
 
     tmpDir: storage/framework/phpstan
+
+    # Models declare casts() via the Laravel 11+ method style (not the legacy
+    # $casts array), so Larastan must parse the method body statically to
+    # infer enum-cast attribute types instead of trusting the return
+    # type's PHPDoc (`array<string, string>`), which would otherwise widen
+    # every enum cast to plain string and make real enum comparisons look
+    # like dead code.
+    parseModelCastsMethod: true
+
+    # Sanctum's HasApiTokens::currentAccessToken() is templated to
+    # PersonalAccessToken only; its actual runtime return (verified by
+    # Laravel\Sanctum\Guard) is PersonalAccessToken|TransientToken|null
+    # depending on whether the request authenticated via a session guard or
+    # a bearer token. Trusting that upstream PHPDoc as certain makes the
+    # TransientToken branch our logout Actions must handle (CLAUDE.md's
+    # guard-agnostic auth requirement) look like dead code.
+    treatPhpDocTypesAsCertain: false
