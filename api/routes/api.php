@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Admin\Catalog\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\V1\Provider\Business\AvailabilityController as ProviderAvailabilityManagementController;
+use App\Http\Controllers\Api\V1\Provider\Business\BusinessDocumentController;
+use App\Http\Controllers\Api\V1\Provider\Business\BusinessProfileController;
+use App\Http\Controllers\Api\V1\Provider\Business\SubmitForVerificationController;
 use App\Http\Controllers\Api\V1\Provider\Catalog\ServiceController as ProviderServiceController;
 use App\Http\Controllers\Api\V1\Shared\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Shared\Auth\LogoutAllDevicesController;
@@ -13,6 +17,7 @@ use App\Http\Controllers\Api\V1\Shared\Auth\RegisterCustomerController;
 use App\Http\Controllers\Api\V1\Shared\Auth\RegisterFreelancerController;
 use App\Http\Controllers\Api\V1\Shared\Auth\ResendEmailVerificationController;
 use App\Http\Controllers\Api\V1\Shared\Auth\VerifyEmailController;
+use App\Http\Controllers\Api\V1\Shared\Business\ProviderAvailabilityController;
 use App\Http\Controllers\Api\V1\Shared\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Shared\Catalog\ServiceController;
 use Illuminate\Support\Facades\Route;
@@ -41,6 +46,8 @@ Route::prefix('v1')->name('catalog.')->group(function () {
     Route::get('services', [ServiceController::class, 'index'])->name('services.index');
     Route::get('services/{service}', [ServiceController::class, 'show'])->name('services.show');
     Route::get('services/{service}/pricing', [ServiceController::class, 'pricing'])->name('services.pricing');
+
+    Route::get('providers/{business}/availability', [ProviderAvailabilityController::class, 'show'])->name('providers.availability');
 });
 
 Route::prefix('v1/admin')->name('admin.')->middleware(['api.protected', 'role:admin,super_admin'])->group(function () {
@@ -51,5 +58,20 @@ Route::prefix('v1/admin')->name('admin.')->middleware(['api.protected', 'role:ad
 });
 
 Route::prefix('v1/provider')->name('provider.')->middleware(['api.protected', 'role:provider_owner,provider_staff'])->group(function () {
+    Route::get('me', [BusinessProfileController::class, 'show'])->name('me.show');
+    Route::patch('me', [BusinessProfileController::class, 'update'])->name('me.update');
+
+    Route::post('me/documents/upload-url', [BusinessDocumentController::class, 'uploadUrl'])->name('me.documents.upload-url');
+    Route::post('me/documents', [BusinessDocumentController::class, 'store'])->name('me.documents.store');
+
+    Route::post('me/submit-for-verification', SubmitForVerificationController::class)->name('me.submit-for-verification');
+
+    Route::get('me/services', [ProviderServiceController::class, 'index'])->name('services.index');
     Route::post('services', [ProviderServiceController::class, 'store'])->name('services.store');
+    Route::get('services/{service}', [ProviderServiceController::class, 'show'])->name('services.show');
+    Route::patch('services/{service}', [ProviderServiceController::class, 'update'])->name('services.update');
+    Route::delete('services/{service}', [ProviderServiceController::class, 'destroy'])->name('services.destroy');
+
+    Route::get('me/availability', [ProviderAvailabilityManagementController::class, 'show'])->name('me.availability.show');
+    Route::put('me/availability', [ProviderAvailabilityManagementController::class, 'update'])->name('me.availability.update');
 });

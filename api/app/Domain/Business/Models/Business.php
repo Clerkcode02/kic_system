@@ -6,6 +6,7 @@ namespace App\Domain\Business\Models;
 
 use App\Domain\Booking\Models\Booking;
 use App\Domain\Business\Enums\BusinessVerificationStatus;
+use App\Domain\Business\Enums\CanadianProvince;
 use App\Domain\Catalog\Models\Service;
 use App\Domain\Payment\Models\Payout;
 use App\Domain\User\Models\User;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Business extends Model
 {
@@ -32,6 +34,11 @@ class Business extends Model
         'verification_status',
         'business_hours',
         'max_bookings_per_day',
+        'street',
+        'unit',
+        'city',
+        'province',
+        'postal_code',
     ];
 
     /**
@@ -48,7 +55,28 @@ class Business extends Model
             'business_hours' => 'array',
             'rating_avg' => 'decimal:2',
             'max_bookings_per_day' => 'integer',
+            'province' => CanadianProvince::class,
         ];
+    }
+
+    /**
+     * Reads `location` back out via raw SQL for the same reason it's
+     * written that way — no native Eloquent cast exists for geography(Point).
+     *
+     * @return array{lat: float, lng: float}|null
+     */
+    public function locationPoint(): ?array
+    {
+        $row = DB::selectOne(
+            'select ST_Y(location::geometry) as lat, ST_X(location::geometry) as lng from businesses where id = ? and location is not null',
+            [$this->id]
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return ['lat' => (float) $row->lat, 'lng' => (float) $row->lng];
     }
 
     /**
@@ -73,6 +101,14 @@ class Business extends Model
     public function availability(): HasMany
     {
         return $this->hasMany(ProviderAvailability::class);
+    }
+
+    /**
+     * @return HasMany<ProviderAvailabilityOverride, $this>
+     */
+    public function availabilityOverrides(): HasMany
+    {
+        return $this->hasMany(ProviderAvailabilityOverride::class, 'business_id');
     }
 
     /**

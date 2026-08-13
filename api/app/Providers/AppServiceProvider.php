@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Domain\Booking\Models\Booking;
+use App\Domain\Business\Events\BusinessSubmittedForVerification;
+use App\Domain\Business\Listeners\NotifyAdminsOfVerificationSubmission;
+use App\Domain\Business\Services\AvailabilityCache;
+use App\Domain\Business\Services\GeoapifyGeocoder;
+use App\Domain\Business\Services\Geocoder;
 use App\Domain\Catalog\Events\CategoryTreeChanged;
 use App\Domain\Catalog\Listeners\FlushCategoryTreeCache;
 use App\Domain\Dispute\Models\Dispute;
@@ -30,7 +35,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            Geocoder::class,
+            fn () => new GeoapifyGeocoder((string) config('services.geoapify.key'))
+        );
     }
 
     /**
@@ -40,6 +48,29 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen(UserRegistered::class, SendEmailVerificationNotification::class);
         Event::listen(CategoryTreeChanged::class, FlushCategoryTreeCache::class);
+        Event::listen(BusinessSubmittedForVerification::class, NotifyAdminsOfVerificationSubmission::class);
+
+        // Provider availability is cached per-provider-per-day (5 min TTL);
+        // any booking write for a date must bust that date's cache entry
+        // immediately rather than waiting out the TTL (CLAUDE.md
+        // provider-management spec). A plain model-event hook, not a domain
+        // event/listener pair, since this is cache bookkeeping rather than a
+        // business-rule side effect.
+        Booking::created(function (Booking $booking) {
+            $this->app->make(AvailabilityCache::class)->forget($booking->provider_id, $booking->scheduled_date->toDateString());
+        });
+
+        Booking::updated(function (Booking $booking) {
+            if ($booking->wasChanged(['scheduled_date', 'status', 'time_slot_start', 'time_slot_end'])) {
+                $this->app->make(AvailabilityCache::class)->forget($booking->provider_id, $booking->scheduled_date->toDateString());
+
+                $originalDate = $booking->getOriginal('scheduled_date')?->toDateString();
+
+                if ($originalDate !== null && $originalDate !== $booking->scheduled_date->toDateString()) {
+                    $this->app->make(AvailabilityCache::class)->forget($booking->provider_id, $originalDate);
+                }
+            }
+        });
 
         // Tighter than the general API — auth endpoints are the brute-force
         // surface (login, register). Keyed by IP + submitted email so one
