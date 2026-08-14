@@ -9,8 +9,6 @@ requirements.
 
 ## 1. What this is
 
-A production multi-service marketplace (comparable to Thumbtack / Angi / TaskRabbit /
-Upwork) with two distinct transaction models under one roof:
 
 - **Services & bookings** — customers book verified provider businesses; providers respond
   with quotations; payment on quotation acceptance.
@@ -220,6 +218,17 @@ Post-completion only, one per completed transaction, no self-review, provider ma
 once, edit window configurable then locked (`edit_locked_at`). Polymorphic over
 booking | project.
 
+### Verification (business & freelancer)
+Approving/rejecting a pending business or freelancer profile always goes through
+`App\Domain\Business\Actions\{Approve,Reject}BusinessVerification` or
+`App\Domain\Freelance\Actions\{Approve,Reject}FreelancerVerification` — never a direct
+`$model->update(['verification_status' => ...])`/`['approval_status' => ...])`. These
+Actions are the only places that dispatch `BusinessVerificationApproved/Rejected` and
+`FreelancerVerificationApproved/Rejected`, which is what drives the SRS §11
+`VerificationApproved/RejectedNotification` pair. No admin HTTP endpoint calls these yet
+(the admin verification queue UI is unbuilt) — when it is, wire the controller to these
+existing Actions instead of re-implementing the status flip inline.
+
 ### Audit trail
 Single insert-only `audit_logs` table. A global `RecordAuditEntry` listener subscribes to
 every domain event implementing the `Auditable` marker interface. Stores actor, dot-notation
@@ -353,3 +362,6 @@ See `docs/PROJECT_SETUP.md` for the full env var list and third-party account ch
 - After changing an endpoint, regenerate the OpenAPI spec and the frontend types.
 - Run `composer pint`, `composer larastan`, `php artisan test`, and `npm run typecheck`
   before declaring a task done.
+
+  ## 12. Maintaining this file
+   - If you discover an important project convention, gotcha, or repeated correction during a session, propose adding it to CLAUDE.md before the session ends.

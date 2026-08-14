@@ -31,6 +31,7 @@ class Milestone extends Model
         'currency',
         'due_date',
         'status',
+        'rejection_reason',
     ];
 
     /**

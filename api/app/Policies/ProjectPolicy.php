@@ -36,4 +36,27 @@ class ProjectPolicy
 
         return $user->can(PermissionName::ProjectsUpdate->value) && $project->client_id === $user->id;
     }
+
+    public function cancel(User $user, Project $project): bool
+    {
+        if ($this->isPlatformAdmin($user)) {
+            return true;
+        }
+
+        return $user->can(PermissionName::ProjectsUpdate->value) && $project->client_id === $user->id;
+    }
+
+    /**
+     * Proposals for a project are visible to its owning client (and, via
+     * admin oversight, to admins) — not to other freelancers competing
+     * for the same work.
+     */
+    public function viewProposals(User $user, Project $project): bool
+    {
+        if ($this->isPlatformAdmin($user)) {
+            return $user->can(PermissionName::ProposalsView->value);
+        }
+
+        return $user->can(PermissionName::ProposalsView->value) && $project->client_id === $user->id;
+    }
 }

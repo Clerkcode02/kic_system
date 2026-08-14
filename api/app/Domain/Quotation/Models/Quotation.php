@@ -25,6 +25,7 @@ class Quotation extends Model
      */
     protected $fillable = [
         'booking_id',
+        'previous_quotation_id',
         'labor_cost',
         'materials_cost',
         'additional_fees',
@@ -32,10 +33,13 @@ class Quotation extends Model
         'tax_amount',
         'discount_amount',
         'total_amount',
+        'deposit_percentage',
         'currency',
         'valid_until',
         'revision_number',
         'status',
+        'reminder_24h_sent_at',
+        'reminder_2h_sent_at',
     ];
 
     /**
@@ -51,9 +55,12 @@ class Quotation extends Model
             'tax_amount' => MoneyCast::class,
             'discount_amount' => MoneyCast::class,
             'total_amount' => MoneyCast::class,
+            'deposit_percentage' => 'decimal:2',
             'valid_until' => 'datetime',
             'revision_number' => 'integer',
             'status' => QuotationStatus::class,
+            'reminder_24h_sent_at' => 'datetime',
+            'reminder_2h_sent_at' => 'datetime',
         ];
     }
 
@@ -71,5 +78,13 @@ class Quotation extends Model
     public function lineItems(): HasMany
     {
         return $this->hasMany(QuotationLineItem::class);
+    }
+
+    /**
+     * @return BelongsTo<Quotation, $this>
+     */
+    public function previousQuotation(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'previous_quotation_id');
     }
 }

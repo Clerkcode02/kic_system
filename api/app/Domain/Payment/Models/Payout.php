@@ -12,6 +12,7 @@ use Database\Factories\PayoutFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Payout extends Model
 {
@@ -47,5 +48,13 @@ class Payout extends Model
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Business::class, 'provider_id');
+    }
+
+    /**
+     * @return HasMany<Payment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 }

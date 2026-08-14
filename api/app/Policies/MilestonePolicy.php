@@ -34,6 +34,12 @@ class MilestonePolicy
             && $milestone->contract->project->client_id === $user->id;
     }
 
+    public function reject(User $user, Milestone $milestone): bool
+    {
+        return $user->can(PermissionName::MilestonesReject->value)
+            && $milestone->contract->project->client_id === $user->id;
+    }
+
     private function isPartyToContract(User $user, Milestone $milestone): bool
     {
         return $milestone->contract->project->client_id === $user->id

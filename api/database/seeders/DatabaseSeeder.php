@@ -103,6 +103,41 @@ class DatabaseSeeder extends Seeder
             'type' => 'integer',
             'description' => 'Default platform fee percentage applied to bookings and milestones.',
         ]);
+
+        PlatformSetting::factory()->create([
+            'key' => 'quotation.final_reminder_window_hours',
+            'value' => '2',
+            'type' => 'integer',
+            'description' => 'Hours before valid_until to send the final customer reminder.',
+        ]);
+
+        PlatformSetting::factory()->create([
+            'key' => 'quotation.default_validity_hours',
+            'value' => '120',
+            'type' => 'integer',
+            'description' => 'How long a sent quotation stays valid before ExpireStaleQuotationsJob expires it.',
+        ]);
+
+        PlatformSetting::factory()->create([
+            'key' => 'quotation.tax_percentage',
+            'value' => '13',
+            'type' => 'integer',
+            'description' => 'Tax percentage applied to a quotation subtotal (Ontario HST default).',
+        ]);
+
+        PlatformSetting::factory()->create([
+            'key' => 'booking.quotation_nudge_after_hours',
+            'value' => '48',
+            'type' => 'integer',
+            'description' => 'Hours a booking can sit in waiting_for_quotation before the provider is nudged.',
+        ]);
+
+        PlatformSetting::factory()->create([
+            'key' => 'refund.large_amount_threshold',
+            'value' => '500.00',
+            'type' => 'float',
+            'description' => 'Refunds above this CAD amount require payments.refund-large (super_admin by default).',
+        ]);
     }
 
     /**

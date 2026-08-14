@@ -33,4 +33,22 @@ class BookingPolicy
         return $user->can(PermissionName::BookingsCancel->value)
             && ($booking->customer_id === $user->id || $booking->provider->user_id === $user->id);
     }
+
+    public function checkIn(User $user, Booking $booking): bool
+    {
+        return $user->can(PermissionName::BookingsManageStatus->value)
+            && $booking->provider->user_id === $user->id;
+    }
+
+    public function complete(User $user, Booking $booking): bool
+    {
+        return $user->can(PermissionName::BookingsManageStatus->value)
+            && $booking->provider->user_id === $user->id;
+    }
+
+    public function confirmCompletion(User $user, Booking $booking): bool
+    {
+        return $user->can(PermissionName::BookingsConfirmCompletion->value)
+            && $booking->customer_id === $user->id;
+    }
 }

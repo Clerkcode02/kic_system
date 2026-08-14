@@ -65,6 +65,15 @@ class BusinessFactory extends Factory
         ]);
     }
 
+    public function payoutsEnabled(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'stripe_connect_account_id' => 'acct_'.fake()->unique()->bothify('##########????'),
+            'stripe_charges_enabled' => true,
+            'stripe_payouts_enabled' => true,
+        ]);
+    }
+
     /**
      * Set `location` via raw SQL after creation — geography columns have no
      * native Eloquent cast (see the model's docblock).

@@ -26,6 +26,7 @@ class RoleAndPermissionSeeder extends Seeder
             PermissionName::BookingsCreate,
             PermissionName::BookingsView,
             PermissionName::BookingsCancel,
+            PermissionName::BookingsConfirmCompletion,
             PermissionName::QuotationsView,
             PermissionName::QuotationsAccept,
             PermissionName::QuotationsReject,
@@ -36,7 +37,9 @@ class RoleAndPermissionSeeder extends Seeder
             PermissionName::ProposalsHire,
             PermissionName::ContractsView,
             PermissionName::MilestonesView,
+            PermissionName::MilestonesCreate,
             PermissionName::MilestonesApprove,
+            PermissionName::MilestonesReject,
             PermissionName::ReviewsCreate,
             PermissionName::ReviewsView,
             PermissionName::BusinessesView,
@@ -52,6 +55,7 @@ class RoleAndPermissionSeeder extends Seeder
         RoleName::ProviderOwner->value => [
             PermissionName::BookingsView,
             PermissionName::BookingsCancel,
+            PermissionName::BookingsManageStatus,
             PermissionName::QuotationsCreate,
             PermissionName::QuotationsRevise,
             PermissionName::QuotationsView,
@@ -75,6 +79,7 @@ class RoleAndPermissionSeeder extends Seeder
         RoleName::ProviderStaff->value => [
             PermissionName::BookingsView,
             PermissionName::BookingsCancel,
+            PermissionName::BookingsManageStatus,
             PermissionName::QuotationsCreate,
             PermissionName::QuotationsRevise,
             PermissionName::QuotationsView,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Freelance\Models;
 
+use App\Domain\User\Models\User;
 use App\Support\Concerns\HasUuidv7;
 use Database\Factories\DeliverableFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,9 +22,13 @@ class Deliverable extends Model
      */
     protected $fillable = [
         'milestone_id',
+        'uploaded_by',
         'file_path',
+        'mime_type',
+        'size_bytes',
         'description',
         'submitted_at',
+        'scanned',
     ];
 
     /**
@@ -32,7 +37,9 @@ class Deliverable extends Model
     protected function casts(): array
     {
         return [
+            'size_bytes' => 'integer',
             'submitted_at' => 'datetime',
+            'scanned' => 'boolean',
         ];
     }
 
@@ -42,5 +49,13 @@ class Deliverable extends Model
     public function milestone(): BelongsTo
     {
         return $this->belongsTo(Milestone::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function uploadedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
     }
 }

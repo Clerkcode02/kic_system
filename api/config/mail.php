@@ -67,6 +67,15 @@ return [
             'transport' => 'resend',
         ],
 
+        // CLAUDE.md stack table — Gmail API (OAuth2), never SMTP, never a
+        // third-party ESP. See App\Support\Mail\GmailApiTransport and
+        // App\Providers\MailServiceProvider (registers this driver via
+        // Mail::extend). Set MAIL_MAILER=gmail in staging/production only —
+        // local dev keeps MAIL_MAILER=smtp against Mailpit.
+        'gmail' => [
+            'transport' => 'gmail',
+        ],
+
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
@@ -115,6 +124,27 @@ return [
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Markdown Mail Settings
+    |--------------------------------------------------------------------------
+    |
+    | Every notification mail (App\Domain\*\Notifications) is built with
+    | Illuminate\Notifications\Messages\MailMessage, which renders through
+    | this markdown theme — one branded template + automatic plain-text
+    | fallback for every mail-channel notification, with no per-notification
+    | Blade views to maintain.
+    |
+    */
+
+    'markdown' => [
+        'theme' => 'marketplace',
+
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
     ],
 
 ];

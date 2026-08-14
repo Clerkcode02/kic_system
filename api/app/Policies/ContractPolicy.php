@@ -22,4 +22,9 @@ class ContractPolicy
         return $user->can(PermissionName::ContractsView->value)
             && ($contract->project->client_id === $user->id || $contract->proposal->freelancer->user_id === $user->id);
     }
+
+    public function defineMilestones(User $user, Contract $contract): bool
+    {
+        return $user->can(PermissionName::MilestonesCreate->value) && $contract->project->client_id === $user->id;
+    }
 }

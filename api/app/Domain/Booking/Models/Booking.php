@@ -46,6 +46,8 @@ class Booking extends Model
         'notes',
         'status',
         'payment_status',
+        'provider_completed_at',
+        'quotation_nudge_sent_at',
     ];
 
     /**
@@ -59,6 +61,8 @@ class Booking extends Model
             'lng' => 'decimal:7',
             'status' => BookingStatus::class,
             'payment_status' => BookingPaymentStatus::class,
+            'provider_completed_at' => 'datetime',
+            'quotation_nudge_sent_at' => 'datetime',
         ];
     }
 

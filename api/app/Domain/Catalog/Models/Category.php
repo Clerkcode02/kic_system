@@ -28,6 +28,7 @@ class Category extends Model
         'icon',
         'is_active',
         'sort_order',
+        'platform_fee_percentage',
     ];
 
     /**
@@ -38,6 +39,7 @@ class Category extends Model
         return [
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            'platform_fee_percentage' => 'decimal:2',
         ];
     }
 

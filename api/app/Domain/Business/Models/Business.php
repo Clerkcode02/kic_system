@@ -39,6 +39,9 @@ class Business extends Model
         'city',
         'province',
         'postal_code',
+        'stripe_connect_account_id',
+        'stripe_charges_enabled',
+        'stripe_payouts_enabled',
     ];
 
     /**
@@ -56,7 +59,18 @@ class Business extends Model
             'rating_avg' => 'decimal:2',
             'max_bookings_per_day' => 'integer',
             'province' => CanadianProvince::class,
+            'stripe_charges_enabled' => 'boolean',
+            'stripe_payouts_enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * CLAUDE.md §7 — sending a quotation is blocked until the connected
+     * account can actually receive funds.
+     */
+    public function canReceiveFunds(): bool
+    {
+        return $this->stripe_payouts_enabled === true;
     }
 
     /**

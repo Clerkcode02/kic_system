@@ -78,4 +78,9 @@ class QuotationFactory extends Factory
             'valid_until' => fake()->dateTimeBetween('-5 days', '-1 day'),
         ]);
     }
+
+    public function withDeposit(float $percentage = 25.0): static
+    {
+        return $this->state(fn (array $attributes) => ['deposit_percentage' => $percentage]);
+    }
 }

@@ -31,6 +31,9 @@ class FreelancerProfile extends Model
         'currency',
         'years_experience',
         'approval_status',
+        'stripe_connect_account_id',
+        'stripe_charges_enabled',
+        'stripe_payouts_enabled',
     ];
 
     /**
@@ -43,7 +46,18 @@ class FreelancerProfile extends Model
             'years_experience' => 'integer',
             'approval_status' => FreelancerApprovalStatus::class,
             'rating_avg' => 'decimal:2',
+            'stripe_charges_enabled' => 'boolean',
+            'stripe_payouts_enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * CLAUDE.md §7 — hiring a freelancer is blocked until the connected
+     * account can actually receive escrow transfers.
+     */
+    public function canReceiveFunds(): bool
+    {
+        return $this->stripe_payouts_enabled === true;
     }
 
     /**

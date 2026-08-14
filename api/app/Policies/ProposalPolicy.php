@@ -36,4 +36,14 @@ class ProposalPolicy
     {
         return $user->can(PermissionName::ProposalsHire->value) && $proposal->project->client_id === $user->id;
     }
+
+    public function shortlist(User $user, Proposal $proposal): bool
+    {
+        return $user->can(PermissionName::ProposalsHire->value) && $proposal->project->client_id === $user->id;
+    }
+
+    public function withdraw(User $user, Proposal $proposal): bool
+    {
+        return $user->can(PermissionName::ProposalsCreate->value) && $proposal->freelancer->user_id === $user->id;
+    }
 }

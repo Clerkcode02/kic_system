@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Support\ConflictException;
 use App\Support\IllegalStateTransitionException;
+use App\Support\PaymentsBlockedException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified.account' => \App\Http\Middleware\EnsureVerified::class,
             'not-suspended' => \App\Http\Middleware\EnsureNotSuspended::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'idempotent' => \App\Http\Middleware\HandleIdempotency::class,
         ]);
 
         // CLAUDE.md §4 — the standard stack for every authenticated write
@@ -71,6 +73,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 'from' => $e->from,
                 'to' => $e->to,
             ], 409);
+        });
+
+        $exceptions->render(function (PaymentsBlockedException $e, Request $request) {
+            if (! $request->expectsJson() && ! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => $e->errorCode,
+            ], 403);
         });
 
         $exceptions->render(function (ConflictException $e, Request $request) {

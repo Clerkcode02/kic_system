@@ -9,6 +9,8 @@ enum PermissionName: string
     case BookingsCreate = 'bookings.create';
     case BookingsView = 'bookings.view';
     case BookingsCancel = 'bookings.cancel';
+    case BookingsManageStatus = 'bookings.manage-status';
+    case BookingsConfirmCompletion = 'bookings.confirm-completion';
 
     case QuotationsCreate = 'quotations.create';
     case QuotationsRevise = 'quotations.revise';
@@ -27,8 +29,10 @@ enum PermissionName: string
     case ContractsView = 'contracts.view';
 
     case MilestonesView = 'milestones.view';
+    case MilestonesCreate = 'milestones.create';
     case MilestonesSubmit = 'milestones.submit';
     case MilestonesApprove = 'milestones.approve';
+    case MilestonesReject = 'milestones.reject';
 
     case ReviewsCreate = 'reviews.create';
     case ReviewsReply = 'reviews.reply';
@@ -53,6 +57,7 @@ enum PermissionName: string
     case PaymentsCreate = 'payments.create';
     case PaymentsView = 'payments.view';
     case PaymentsRefund = 'payments.refund';
+    case PaymentsRefundLarge = 'payments.refund-large';
 
     case CategoriesManage = 'categories.manage';
     case PlatformSettingsManage = 'platform-settings.manage';

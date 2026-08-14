@@ -24,9 +24,16 @@ class PaymentPolicy
         return $user->can(PermissionName::PaymentsView->value) && $this->isPartyToPayable($user, $payment);
     }
 
-    public function create(User $user, Booking $booking): bool
+    public function create(User $user, Booking|Milestone $payable): bool
     {
-        return $user->can(PermissionName::PaymentsCreate->value) && $booking->customer_id === $user->id;
+        if (! $user->can(PermissionName::PaymentsCreate->value)) {
+            return false;
+        }
+
+        return match (true) {
+            $payable instanceof Booking => $payable->customer_id === $user->id,
+            $payable instanceof Milestone => $payable->contract->project->client_id === $user->id,
+        };
     }
 
     public function refund(User $user, Payment $payment): bool

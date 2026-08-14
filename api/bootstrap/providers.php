@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Providers\AppServiceProvider;
-use App\Providers\AuthServiceProvider;
-
 return [
-    AppServiceProvider::class,
-    AuthServiceProvider::class,
+    App\Providers\AppServiceProvider::class,
+    App\Providers\AuthServiceProvider::class,
+    App\Providers\HorizonServiceProvider::class,
+    App\Providers\MailServiceProvider::class,
 ];
