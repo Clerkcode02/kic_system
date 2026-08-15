@@ -59,4 +59,14 @@ class ProjectPolicy
 
         return $user->can(PermissionName::ProposalsView->value) && $project->client_id === $user->id;
     }
+
+    /**
+     * Only the client reviews the hired freelancer. Whether the project is
+     * actually completed, and the one-per-transaction rule, are enforced
+     * by SubmitProjectReview — this only gates who may call it.
+     */
+    public function review(User $user, Project $project): bool
+    {
+        return $user->can(PermissionName::ReviewsCreate->value) && $project->client_id === $user->id;
+    }
 }

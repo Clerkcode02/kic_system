@@ -15,6 +15,7 @@ use App\Domain\Freelance\Models\Milestone;
 use App\Domain\Freelance\Models\Project;
 use App\Domain\Freelance\Models\Proposal;
 use App\Domain\Payment\Models\Payment;
+use App\Domain\Platform\Models\PlatformSetting;
 use App\Domain\Quotation\Models\Quotation;
 use App\Domain\Review\Models\Review;
 use App\Policies\AuditLogPolicy;
@@ -25,6 +26,7 @@ use App\Policies\ContractPolicy;
 use App\Policies\DisputePolicy;
 use App\Policies\MilestonePolicy;
 use App\Policies\PaymentPolicy;
+use App\Policies\PlatformSettingPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ProposalPolicy;
 use App\Policies\QuotationPolicy;
@@ -51,6 +53,7 @@ class AuthServiceProvider extends ServiceProvider
         Dispute::class => DisputePolicy::class,
         AuditLog::class => AuditLogPolicy::class,
         Payment::class => PaymentPolicy::class,
+        PlatformSetting::class => PlatformSettingPolicy::class,
     ];
 
     public function boot(): void

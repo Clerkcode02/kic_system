@@ -18,6 +18,38 @@ class ContractMilestonesDefined implements Auditable
     public function __construct(
         public readonly Contract $contract,
         public readonly User $actor,
+        public readonly int $previousMilestoneCount = 0,
+        public readonly int $newMilestoneCount = 0,
     ) {
+    }
+
+    public function auditActorId(): ?string
+    {
+        return $this->actor->id;
+    }
+
+    public function auditAction(): string
+    {
+        return 'contract.milestones_defined';
+    }
+
+    public function auditableType(): string
+    {
+        return 'contract';
+    }
+
+    public function auditableId(): string
+    {
+        return $this->contract->id;
+    }
+
+    public function auditBeforeState(): ?array
+    {
+        return ['milestone_count' => $this->previousMilestoneCount];
+    }
+
+    public function auditAfterState(): ?array
+    {
+        return ['milestone_count' => $this->newMilestoneCount];
     }
 }

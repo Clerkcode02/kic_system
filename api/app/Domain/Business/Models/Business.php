@@ -34,6 +34,7 @@ class Business extends Model
         'verification_status',
         'business_hours',
         'max_bookings_per_day',
+        'rating_avg',
         'street',
         'unit',
         'city',

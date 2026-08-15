@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\Quotation\Services;
 
 use App\Domain\Booking\Models\Booking;
-use App\Domain\Platform\Models\PlatformSetting;
 use App\Domain\Quotation\Support\QuotationTotals;
+use App\Support\Facades\Settings;
 use App\Support\ValueObjects\Money;
 
 /**
@@ -78,12 +78,6 @@ final class QuotationTotalCalculator
 
     private function settingValue(string $key, float $default): float
     {
-        $setting = PlatformSetting::query()->where('key', $key)->first();
-
-        if ($setting === null) {
-            return $default;
-        }
-
-        return (float) $setting->typedValue;
+        return (float) Settings::get($key, $default);
     }
 }

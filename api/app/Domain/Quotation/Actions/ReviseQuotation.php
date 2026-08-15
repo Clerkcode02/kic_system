@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Quotation\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Booking\Actions\TransitionBookingStatus;
 use App\Domain\Booking\Enums\BookingStatus;
-use App\Domain\Platform\Models\PlatformSetting;
 use App\Domain\Quotation\Events\QuotationRevised;
 use App\Domain\Quotation\Models\Quotation;
 use App\Domain\Quotation\Models\QuotationLineItem;
@@ -15,6 +13,7 @@ use App\Domain\Quotation\Services\QuotationTotalCalculator;
 use App\Domain\Quotation\StateMachines\QuotationStateMachine;
 use App\Domain\User\Models\User;
 use App\Support\Action;
+use App\Support\Facades\Settings;
 use App\Support\PaymentsBlockedException;
 use App\Support\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
@@ -112,18 +111,7 @@ final class ReviseQuotation implements Action
             $booking = $this->transition->handle($booking, BookingStatus::QuotationSent, $actor, 'Provider sent a revised quotation.');
             $this->transition->handle($booking, BookingStatus::WaitingForCustomer, $actor, 'Awaiting customer response.');
 
-            AuditLog::create([
-                'actor_id' => $actor->id,
-                'action' => 'quotation.revised',
-                'auditable_type' => 'quotation',
-                'auditable_id' => $quotation->id,
-                'before_state' => ['previous_quotation_id' => $previous->id, 'revision_number' => $previous->revision_number],
-                'after_state' => ['revision_number' => $quotation->revision_number, 'total_amount' => $quotation->total_amount->toDecimal()],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
-
-            QuotationRevised::dispatch($quotation, $previous->fresh());
+            QuotationRevised::dispatch($quotation, $previous->fresh(), $actor);
 
             return $quotation->fresh(['lineItems', 'booking']);
         });
@@ -131,8 +119,6 @@ final class ReviseQuotation implements Action
 
     private function validityHours(): int
     {
-        $setting = PlatformSetting::query()->where('key', 'quotation.default_validity_hours')->first();
-
-        return $setting !== null ? (int) $setting->typedValue : self::DEFAULT_VALIDITY_HOURS;
+        return (int) Settings::get('quotation.default_validity_hours', self::DEFAULT_VALIDITY_HOURS);
     }
 }

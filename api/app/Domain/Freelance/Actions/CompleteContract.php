@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Freelance\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Freelance\Enums\ContractStatus;
 use App\Domain\Freelance\Enums\MilestoneStatus;
 use App\Domain\Freelance\Enums\ProjectStatus;
@@ -47,18 +46,7 @@ final class CompleteContract implements Action
 
                 $contract->update(['status' => ContractStatus::Completed]);
 
-                AuditLog::create([
-                    'actor_id' => $actor?->id,
-                    'action' => 'contract.completed',
-                    'auditable_type' => 'contract',
-                    'auditable_id' => $contract->id,
-                    'before_state' => ['status' => $from],
-                    'after_state' => ['status' => ContractStatus::Completed->value],
-                    'ip_address' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ]);
-
-                ContractCompleted::dispatch($contract->fresh());
+                ContractCompleted::dispatch($contract->fresh(), $actor, $from);
 
                 $project = $contract->project;
 

@@ -19,4 +19,34 @@ class FreelancerVerificationRejected implements Auditable
         public readonly ?string $reason,
     ) {
     }
+
+    public function auditActorId(): ?string
+    {
+        return null;
+    }
+
+    public function auditAction(): string
+    {
+        return 'freelancer.verification_rejected';
+    }
+
+    public function auditableType(): string
+    {
+        return 'freelancer';
+    }
+
+    public function auditableId(): string
+    {
+        return $this->profile->id;
+    }
+
+    public function auditBeforeState(): ?array
+    {
+        return ['approval_status' => 'pending'];
+    }
+
+    public function auditAfterState(): ?array
+    {
+        return ['approval_status' => 'rejected', 'reason' => $this->reason];
+    }
 }

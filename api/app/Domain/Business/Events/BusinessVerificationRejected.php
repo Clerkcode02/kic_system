@@ -19,4 +19,34 @@ class BusinessVerificationRejected implements Auditable
         public readonly ?string $reason,
     ) {
     }
+
+    public function auditActorId(): ?string
+    {
+        return null;
+    }
+
+    public function auditAction(): string
+    {
+        return 'business.verification_rejected';
+    }
+
+    public function auditableType(): string
+    {
+        return 'business';
+    }
+
+    public function auditableId(): string
+    {
+        return $this->business->id;
+    }
+
+    public function auditBeforeState(): ?array
+    {
+        return ['verification_status' => 'pending'];
+    }
+
+    public function auditAfterState(): ?array
+    {
+        return ['verification_status' => 'rejected', 'reason' => $this->reason];
+    }
 }

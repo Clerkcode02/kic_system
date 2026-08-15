@@ -17,4 +17,34 @@ class BookingCreated implements Auditable
     public function __construct(public readonly Booking $booking)
     {
     }
+
+    public function auditActorId(): ?string
+    {
+        return $this->booking->customer_id;
+    }
+
+    public function auditAction(): string
+    {
+        return 'booking.created';
+    }
+
+    public function auditableType(): string
+    {
+        return 'booking';
+    }
+
+    public function auditableId(): string
+    {
+        return $this->booking->id;
+    }
+
+    public function auditBeforeState(): ?array
+    {
+        return null;
+    }
+
+    public function auditAfterState(): ?array
+    {
+        return ['status' => $this->booking->status->value];
+    }
 }

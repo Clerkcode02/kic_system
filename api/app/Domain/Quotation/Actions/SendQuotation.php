@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace App\Domain\Quotation\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Booking\Actions\TransitionBookingStatus;
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Booking\Models\Booking;
-use App\Domain\Platform\Models\PlatformSetting;
 use App\Domain\Quotation\Events\QuotationSent;
 use App\Domain\Quotation\Models\Quotation;
 use App\Domain\Quotation\Models\QuotationLineItem;
 use App\Domain\Quotation\Services\QuotationTotalCalculator;
 use App\Domain\User\Models\User;
 use App\Support\Action;
+use App\Support\Facades\Settings;
 use App\Support\PaymentsBlockedException;
 use App\Support\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
@@ -90,18 +89,7 @@ final class SendQuotation implements Action
             $booking = $this->transition->handle($booking, BookingStatus::QuotationSent, $actor, 'Provider sent a quotation.');
             $booking = $this->transition->handle($booking, BookingStatus::WaitingForCustomer, $actor, 'Awaiting customer response.');
 
-            AuditLog::create([
-                'actor_id' => $actor->id,
-                'action' => 'quotation.sent',
-                'auditable_type' => 'quotation',
-                'auditable_id' => $quotation->id,
-                'before_state' => null,
-                'after_state' => ['status' => $quotation->status->value, 'total_amount' => $quotation->total_amount->toDecimal()],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
-
-            QuotationSent::dispatch($quotation);
+            QuotationSent::dispatch($quotation, $actor);
 
             return $quotation->fresh(['lineItems', 'booking']);
         });
@@ -130,8 +118,6 @@ final class SendQuotation implements Action
 
     private function validityHours(): int
     {
-        $setting = PlatformSetting::query()->where('key', 'quotation.default_validity_hours')->first();
-
-        return $setting !== null ? (int) $setting->typedValue : self::DEFAULT_VALIDITY_HOURS;
+        return (int) Settings::get('quotation.default_validity_hours', self::DEFAULT_VALIDITY_HOURS);
     }
 }

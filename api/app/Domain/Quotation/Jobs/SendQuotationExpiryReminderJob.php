@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Quotation\Jobs;
 
-use App\Domain\Platform\Models\PlatformSetting;
 use App\Domain\Quotation\Events\QuotationExpiryReminderDue;
 use App\Domain\Quotation\Models\Quotation;
+use App\Support\Facades\Settings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -45,9 +45,7 @@ class SendQuotationExpiryReminderJob implements ShouldQueue
 
     private function settingHours(string $key, int $default): int
     {
-        $setting = PlatformSetting::query()->where('key', $key)->first();
-
-        return $setting !== null ? (int) $setting->typedValue : $default;
+        return (int) Settings::get($key, $default);
     }
 
     private function sendDue(int $hoursBeforeExpiry, string $column): void

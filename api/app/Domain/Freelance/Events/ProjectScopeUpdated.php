@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Freelance\Events;
 
 use App\Domain\Freelance\Models\Project;
+use App\Domain\User\Models\User;
 use App\Support\Auditable;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -22,10 +23,45 @@ class ProjectScopeUpdated implements Auditable
 
     /**
      * @param  list<string>  $affectedFreelancerUserIds
+     * @param  array<string, mixed>|null  $beforeState
+     * @param  array<string, mixed>|null  $afterState
      */
     public function __construct(
         public readonly Project $project,
         public readonly array $affectedFreelancerUserIds,
+        public readonly ?User $actor = null,
+        public readonly ?array $beforeState = null,
+        public readonly ?array $afterState = null,
     ) {
+    }
+
+    public function auditActorId(): ?string
+    {
+        return $this->actor?->id;
+    }
+
+    public function auditAction(): string
+    {
+        return 'project.updated';
+    }
+
+    public function auditableType(): string
+    {
+        return 'project';
+    }
+
+    public function auditableId(): string
+    {
+        return $this->project->id;
+    }
+
+    public function auditBeforeState(): ?array
+    {
+        return $this->beforeState;
+    }
+
+    public function auditAfterState(): ?array
+    {
+        return $this->afterState;
     }
 }

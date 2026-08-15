@@ -1,0 +1,78 @@
+name: API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - 'docs/openapi.json'
+      - '.github/workflows/api.yml'
+  pull_request:
+    paths:
+      - 'api/**'
+      - 'docs/openapi.json'
+      - '.github/workflows/api.yml'
+
+defaults:
+  run:
+    working-directory: api
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: marketplace
+          POSTGRES_PASSWORD: marketplace
+          POSTGRES_DB: marketplace_testing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U marketplace -d marketplace_testing"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pgsql, pdo_pgsql, gd, redis
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run migrations
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: marketplace_testing
+          DB_USERNAME: marketplace
+          DB_PASSWORD: marketplace
+        run: php artisan migrate --force
+
+      # CLAUDE.md §11: "Run composer pint, composer larastan, php artisan
+      # test, and npm run typecheck before declaring a task done" — `check`
+      # bundles the first three (lint/analyse/test) into one script.
+      - name: Lint, static analysis, tests
+        run: composer check
+
+      # CLAUDE.md task: "a CI check that fails if the committed spec is
+      # stale" — regenerates the spec in-memory and diffs it against
+      # docs/openapi.json without writing, so a route/annotation change
+      # that isn't followed by `php artisan app:export-openapi` fails CI
+      # instead of silently drifting from the API.
+      - name: Verify docs/openapi.json is up to date
+        run: php artisan app:export-openapi --check

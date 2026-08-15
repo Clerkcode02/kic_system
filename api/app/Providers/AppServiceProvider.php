@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Audit\Listeners\RecordAuditEntry;
 use App\Domain\Booking\Events\BookingCreated;
 use App\Domain\Booking\Events\BookingStatusChanged;
 use App\Domain\Booking\Listeners\SendBookingCreatedNotification;
@@ -15,6 +16,7 @@ use App\Domain\Business\Events\BusinessVerificationRejected;
 use App\Domain\Business\Listeners\NotifyAdminsOfVerificationSubmission;
 use App\Domain\Business\Listeners\SendBusinessVerificationApprovedNotification;
 use App\Domain\Business\Listeners\SendBusinessVerificationRejectedNotification;
+use App\Domain\Business\Models\Business;
 use App\Domain\Business\Services\AvailabilityCache;
 use App\Domain\Business\Services\GeoapifyGeocoder;
 use App\Domain\Business\Services\Geocoder;
@@ -31,7 +33,9 @@ use App\Domain\Freelance\Listeners\SendFreelancerVerificationApprovedNotificatio
 use App\Domain\Freelance\Listeners\SendFreelancerVerificationRejectedNotification;
 use App\Domain\Freelance\Listeners\SendMilestoneStatusNotifications;
 use App\Domain\Freelance\Listeners\SendProposalReceivedNotification;
+use App\Domain\Freelance\Models\Contract;
 use App\Domain\Freelance\Models\Deliverable;
+use App\Domain\Freelance\Models\FreelancerProfile;
 use App\Domain\Freelance\Models\Milestone;
 use App\Domain\Freelance\Models\Project;
 use App\Domain\Freelance\Models\Proposal;
@@ -42,8 +46,10 @@ use App\Domain\Payment\Listeners\SendPaymentSucceededNotification;
 use App\Domain\Payment\Listeners\SendPayoutCompletedNotification;
 use App\Domain\Payment\Listeners\SendRefundProcessedNotification;
 use App\Domain\Payment\Models\Payment;
+use App\Domain\Payment\Models\Payout;
 use App\Domain\Payment\Services\PaymentGateway;
 use App\Domain\Payment\Services\StripePaymentService;
+use App\Domain\Platform\Models\PlatformSetting;
 use App\Domain\Quotation\Events\QuotationAccepted;
 use App\Domain\Quotation\Events\QuotationExpiryReminderDue;
 use App\Domain\Quotation\Events\QuotationRejected;
@@ -55,9 +61,11 @@ use App\Domain\Quotation\Listeners\SendQuotationSentNotification;
 use App\Domain\Quotation\Models\Quotation;
 use App\Domain\Review\Events\ReviewReceived;
 use App\Domain\Review\Listeners\SendReviewReceivedNotification;
+use App\Domain\Review\Models\Review;
 use App\Domain\User\Events\UserRegistered;
 use App\Domain\User\Listeners\SendEmailVerificationNotification;
 use App\Domain\User\Models\User;
+use App\Support\Auditable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -143,6 +151,12 @@ class AppServiceProvider extends ServiceProvider
             }
         );
 
+        // SRS §13: single global listener for every event implementing the
+        // Auditable contract — Laravel's dispatcher also matches listeners
+        // registered against an interface the dispatched event implements,
+        // so no per-event registration is needed here.
+        Event::listen(Auditable::class, RecordAuditEntry::class);
+
         Event::listen(UserRegistered::class, SendEmailVerificationNotification::class);
         Event::listen(CategoryTreeChanged::class, FlushCategoryTreeCache::class);
         Event::listen(BusinessSubmittedForVerification::class, NotifyAdminsOfVerificationSubmission::class);
@@ -219,6 +233,12 @@ class AppServiceProvider extends ServiceProvider
             'deliverable' => Deliverable::class,
             'dispute' => Dispute::class,
             'payment' => Payment::class,
+            'business' => Business::class,
+            'contract' => Contract::class,
+            'review' => Review::class,
+            'payout' => Payout::class,
+            'freelancer' => FreelancerProfile::class,
+            'platform_setting' => PlatformSetting::class,
         ]);
 
         // Models live under app/Domain/*/Models (CLAUDE.md §3), but factories

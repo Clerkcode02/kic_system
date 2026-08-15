@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Quotation\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Booking\Actions\TransitionBookingStatus;
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Quotation\Events\QuotationRejected;
@@ -40,18 +39,7 @@ final class RejectQuotation implements Action
                 $reason ?? 'Customer rejected the quotation.',
             );
 
-            AuditLog::create([
-                'actor_id' => $actor->id,
-                'action' => 'quotation.rejected',
-                'auditable_type' => 'quotation',
-                'auditable_id' => $quotation->id,
-                'before_state' => ['status' => 'sent'],
-                'after_state' => ['status' => 'rejected', 'reason' => $reason],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
-
-            QuotationRejected::dispatch($quotation->fresh());
+            QuotationRejected::dispatch($quotation->fresh(), $actor, $reason);
 
             return $quotation->fresh(['lineItems', 'booking']);
         });

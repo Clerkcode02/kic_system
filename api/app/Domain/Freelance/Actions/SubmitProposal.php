@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Freelance\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Freelance\Enums\FreelancerApprovalStatus;
 use App\Domain\Freelance\Enums\ProjectStatus;
 use App\Domain\Freelance\Enums\ProposalStatus;
@@ -75,17 +74,6 @@ final class SubmitProposal implements Action
                 'cover_letter' => $data['cover_letter'],
                 'delivery_days' => $data['delivery_days'],
                 'status' => ProposalStatus::Submitted,
-            ]);
-
-            AuditLog::create([
-                'actor_id' => $freelancerProfile->user_id,
-                'action' => 'proposal.submitted',
-                'auditable_type' => 'proposal',
-                'auditable_id' => $proposal->id,
-                'before_state' => null,
-                'after_state' => ['status' => ProposalStatus::Submitted->value],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
             ]);
 
             ProposalSubmitted::dispatch($proposal);

@@ -235,6 +235,21 @@ every domain event implementing the `Auditable` marker interface. Stores actor, 
 action (`booking.status_changed`), auditable type/id, JSONB before/after **diffs** (not full
 snapshots), IP, user agent. Never updated or deleted by the app.
 
+`App\Support\Auditable` is not a bare marker — it requires 6 methods (`auditActorId`,
+`auditAction`, `auditableType`, `auditableId`, `auditBeforeState`, `auditAfterState`) so the
+one global listener can extract a consistent row from any event shape. To make a new critical
+action (approval, suspension, refund, payout, status transition, admin override) audited:
+1. Implement `Auditable` on the event the Action already dispatches (or add one if it doesn't
+   dispatch anything yet), filling in the 6 methods from data the event's constructor already
+   carries — add an `?User $actor` constructor param if the event doesn't have one.
+2. **Never call `AuditLog::create()` directly from an Action, Job, or controller.**
+   `RecordAuditEntry` is the only writer — a manual create sitting next to a dispatch of an
+   `Auditable` event produces a duplicate row for the same fact. The one narrow exception is a
+   webhook-reaction Action with no corresponding domain event to hang the entry off; even then,
+   prefer adding a small event over a manual create.
+3. Add the event class to the enumerated list in `tests/Architecture/AuditableEventsTest.php`
+   so a future critical event that forgets `Auditable` fails a test instead of going unaudited.
+
 ### Location
 Four separate concerns, each with the lightest tool:
 1. **Set address** — Leaflet map with a draggable pin + a text address field.

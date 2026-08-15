@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Booking\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Booking\Events\BookingStatusChanged;
 use App\Domain\Booking\Models\Booking;
@@ -70,21 +69,9 @@ final class TransitionBookingStatus implements Action
                 'note' => $note,
             ]);
 
-            // No global Auditable listener exists yet (app/Domain/Audit/Listeners
-            // is unpopulated) — write the audit row directly here as well as
-            // dispatching the event below, so status changes are captured now
-            // and any future listener (e.g. notifications) can still hook in.
-            AuditLog::create([
-                'actor_id' => $actor?->id,
-                'action' => 'booking.status_changed',
-                'auditable_type' => 'booking',
-                'auditable_id' => $booking->id,
-                'before_state' => ['status' => $from],
-                'after_state' => ['status' => $to->value],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
-
+            // RecordAuditEntry (the global Auditable listener) records this
+            // status change from the dispatched event below — see
+            // BookingStatusChanged::auditAction()/auditBeforeState() etc.
             BookingStatusChanged::dispatch($booking, $from, $to->value, $actor);
 
             return $booking->refresh();

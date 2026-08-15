@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Freelance\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Freelance\Enums\ContractStatus;
 use App\Domain\Freelance\Enums\ProjectStatus;
 use App\Domain\Freelance\Enums\ProposalStatus;
@@ -82,18 +81,7 @@ final class HireFreelancer implements Action
 
             $this->rejectOtherProposals($project, $proposal, $actor);
 
-            AuditLog::create([
-                'actor_id' => $actor->id,
-                'action' => 'proposal.hired',
-                'auditable_type' => 'proposal',
-                'auditable_id' => $proposal->id,
-                'before_state' => ['status' => 'submitted_or_shortlisted'],
-                'after_state' => ['status' => ProposalStatus::Accepted->value, 'contract_id' => $contract->id],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
-
-            FreelancerHired::dispatch($contract->fresh(['project', 'proposal']));
+            FreelancerHired::dispatch($contract->fresh(['project', 'proposal']), $actor);
 
             return $contract->fresh(['project', 'proposal']);
         });
@@ -112,21 +100,19 @@ final class HireFreelancer implements Action
 
             $sibling->update(['status' => ProposalStatus::Rejected]);
 
-            AuditLog::create([
-                'actor_id' => $actor->id,
-                'action' => 'proposal.auto_rejected',
-                'auditable_type' => 'proposal',
-                'auditable_id' => $sibling->id,
-                'before_state' => ['status' => $from],
-                'after_state' => ['status' => ProposalStatus::Rejected->value, 'reason' => 'Another proposal was hired.'],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
-
             // Notification-channel delivery is Notification-module scope
             // (still unbuilt — see AppServiceProvider) — this event is what
-            // a future listener would hook to actually notify the applicant.
-            ProposalStatusChanged::dispatch($sibling, $from, ProposalStatus::Rejected->value, $actor);
+            // a future listener would hook to actually notify the applicant,
+            // and RecordAuditEntry (global Auditable listener) is what
+            // records it as `proposal.auto_rejected`.
+            ProposalStatusChanged::dispatch(
+                $sibling,
+                $from,
+                ProposalStatus::Rejected->value,
+                $actor,
+                'Another proposal was hired.',
+                'proposal.auto_rejected',
+            );
         }
     }
 }

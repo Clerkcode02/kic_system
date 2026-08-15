@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domain\Payment\Webhooks\StripeWebhookController;
 use App\Http\Controllers\Api\V1\Admin\Catalog\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\V1\Admin\Payment\RefundPaymentController;
+use App\Http\Controllers\Api\V1\Admin\Platform\PlatformSettingController;
 use App\Http\Controllers\Api\V1\Customer\Booking\ConfirmBookingCompletionController;
 use App\Http\Controllers\Api\V1\Customer\Booking\StoreBookingController;
 use App\Http\Controllers\Api\V1\Customer\Project\CancelProjectController;
@@ -28,6 +29,8 @@ use App\Http\Controllers\Api\V1\Provider\Business\SubmitForVerificationControlle
 use App\Http\Controllers\Api\V1\Provider\Catalog\ServiceController as ProviderServiceController;
 use App\Http\Controllers\Api\V1\Provider\Quotation\ReviseQuotationController;
 use App\Http\Controllers\Api\V1\Provider\Quotation\StoreQuotationController as StoreQuotationForBookingController;
+use App\Http\Controllers\Api\V1\Shared\Attachment\AttachmentController;
+use App\Http\Controllers\Api\V1\Shared\Audit\AuditLogController;
 use App\Http\Controllers\Api\V1\Shared\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Shared\Auth\LogoutAllDevicesController;
 use App\Http\Controllers\Api\V1\Shared\Auth\LogoutController;
@@ -44,6 +47,7 @@ use App\Http\Controllers\Api\V1\Shared\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Shared\Catalog\ServiceController;
 use App\Http\Controllers\Api\V1\Shared\Contract\ContractController;
 use App\Http\Controllers\Api\V1\Shared\Contract\StoreContractMilestonesController;
+use App\Http\Controllers\Api\V1\Shared\Dispute\DisputeController;
 use App\Http\Controllers\Api\V1\Shared\Milestone\ApproveMilestoneController;
 use App\Http\Controllers\Api\V1\Shared\Milestone\ConfirmDeliverableController;
 use App\Http\Controllers\Api\V1\Shared\Milestone\MilestoneDeliverableController;
@@ -56,6 +60,11 @@ use App\Http\Controllers\Api\V1\Shared\Payment\CreatePaymentIntentController;
 use App\Http\Controllers\Api\V1\Shared\Project\ProjectController;
 use App\Http\Controllers\Api\V1\Shared\Proposal\ProjectProposalController;
 use App\Http\Controllers\Api\V1\Shared\Quotation\QuotationController;
+use App\Http\Controllers\Api\V1\Shared\Review\BookingReviewController;
+use App\Http\Controllers\Api\V1\Shared\Review\BusinessReviewController;
+use App\Http\Controllers\Api\V1\Shared\Review\ProjectReviewController;
+use App\Http\Controllers\Api\V1\Shared\Review\ReplyToReviewController;
+use App\Http\Controllers\Api\V1\Shared\Upload\UploadController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/auth')->name('auth.')->middleware('throttle:auth')->group(function () {
@@ -84,6 +93,8 @@ Route::prefix('v1')->name('catalog.')->group(function () {
     Route::get('services/{service}/pricing', [ServiceController::class, 'pricing'])->name('services.pricing');
 
     Route::get('providers/{business}/availability', [ProviderAvailabilityController::class, 'show'])->name('providers.availability');
+
+    Route::get('businesses/{business}/reviews', BusinessReviewController::class)->name('businesses.reviews.index');
 });
 
 Route::prefix('v1/bookings')->name('bookings.')->middleware('api.protected')->group(function () {
@@ -95,6 +106,11 @@ Route::prefix('v1/bookings')->name('bookings.')->middleware('api.protected')->gr
     Route::post('{booking}/complete', CompleteBookingController::class)->name('complete');
     Route::post('{booking}/confirm-completion', ConfirmBookingCompletionController::class)->name('confirm-completion');
     Route::post('{booking}/quotations', StoreQuotationForBookingController::class)->name('quotations.store');
+    Route::post('{booking}/reviews', BookingReviewController::class)->name('reviews.store');
+});
+
+Route::prefix('v1/reviews')->name('reviews.')->middleware('api.protected')->group(function () {
+    Route::post('{review}/reply', ReplyToReviewController::class)->name('reply');
 });
 
 Route::prefix('v1/quotations')->name('quotations.')->middleware('api.protected')->group(function () {
@@ -117,6 +133,7 @@ Route::prefix('v1/projects')->name('projects.')->group(function () {
 
         Route::post('{project}/proposals', StoreProposalController::class)->name('proposals.store');
         Route::get('{project}/proposals', ProjectProposalController::class)->name('proposals.index');
+        Route::post('{project}/reviews', ProjectReviewController::class)->name('reviews.store');
     });
 });
 
@@ -159,6 +176,26 @@ Route::prefix('v1/payments')->name('payments.')->middleware('api.protected')->gr
     Route::post('intents', CreatePaymentIntentController::class)->middleware('idempotent')->name('intents.store');
 });
 
+Route::prefix('v1/audit-logs')->name('audit-logs.')->middleware('api.protected')->group(function () {
+    Route::get('/', [AuditLogController::class, 'index'])->name('index');
+});
+
+Route::prefix('v1/disputes')->name('disputes.')->middleware('api.protected')->group(function () {
+    Route::get('/', [DisputeController::class, 'index'])->name('index');
+    Route::post('/', [DisputeController::class, 'store'])->name('store');
+    Route::get('{dispute}', [DisputeController::class, 'show'])->name('show');
+    Route::post('{dispute}/resolve', [DisputeController::class, 'resolve'])->name('resolve');
+});
+
+Route::prefix('v1/uploads')->name('uploads.')->middleware('api.protected')->group(function () {
+    Route::post('presign', [UploadController::class, 'presign'])->name('presign');
+    Route::post('confirm', [UploadController::class, 'confirm'])->name('confirm');
+});
+
+Route::prefix('v1/attachments')->name('attachments.')->middleware('api.protected')->group(function () {
+    Route::get('{attachment}/url', [AttachmentController::class, 'url'])->name('url');
+});
+
 // Public, unauthenticated, signature-verified — no api.protected/idempotent
 // middleware; Stripe (not a logged-in user) calls this (CLAUDE.md §7/§14).
 Route::post('v1/webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
@@ -170,6 +207,9 @@ Route::prefix('v1/admin')->name('admin.')->middleware(['api.protected', 'role:ad
     Route::post('categories/reorder', [AdminCategoryController::class, 'reorder'])->name('categories.reorder');
 
     Route::post('payments/{payment}/refund', RefundPaymentController::class)->middleware('idempotent')->name('payments.refund');
+
+    Route::get('platform-settings', [PlatformSettingController::class, 'index'])->name('platform-settings.index');
+    Route::patch('platform-settings/{key}', [PlatformSettingController::class, 'update'])->name('platform-settings.update');
 });
 
 Route::prefix('v1/provider')->name('provider.')->middleware(['api.protected', 'role:provider_owner,provider_staff'])->group(function () {

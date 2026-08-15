@@ -17,4 +17,34 @@ class QuotationExpired implements Auditable
     public function __construct(public readonly Quotation $quotation)
     {
     }
+
+    public function auditActorId(): ?string
+    {
+        return null;
+    }
+
+    public function auditAction(): string
+    {
+        return 'quotation.expired';
+    }
+
+    public function auditableType(): string
+    {
+        return 'quotation';
+    }
+
+    public function auditableId(): string
+    {
+        return $this->quotation->id;
+    }
+
+    public function auditBeforeState(): ?array
+    {
+        return ['status' => 'sent'];
+    }
+
+    public function auditAfterState(): ?array
+    {
+        return ['status' => 'expired'];
+    }
 }

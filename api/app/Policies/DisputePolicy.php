@@ -17,6 +17,11 @@ class DisputePolicy
 {
     use GrantsAdminOversight;
 
+    public function viewAny(User $user): bool
+    {
+        return $user->can(PermissionName::DisputesView->value);
+    }
+
     public function view(User $user, Dispute $dispute): bool
     {
         if ($this->isPlatformAdmin($user)) {
@@ -35,6 +40,17 @@ class DisputePolicy
     public function resolve(User $user, Dispute $dispute): bool
     {
         return $user->can(PermissionName::DisputesResolve->value);
+    }
+
+    /**
+     * Gates the evidence-attachment lifecycle (presign/confirm/download-url)
+     * for this dispute — same audience as {@see view}: the party who raised
+     * it, the other party to the underlying booking/project/milestone, or
+     * an admin with view rights.
+     */
+    public function manageEvidence(User $user, Dispute $dispute): bool
+    {
+        return $this->view($user, $dispute);
     }
 
     private function isPartyToDisputable(User $user, Dispute $dispute): bool

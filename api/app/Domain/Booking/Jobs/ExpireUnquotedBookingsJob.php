@@ -7,7 +7,7 @@ namespace App\Domain\Booking\Jobs;
 use App\Domain\Booking\Actions\TransitionBookingStatus;
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Booking\Models\Booking;
-use App\Domain\Platform\Models\PlatformSetting;
+use App\Support\Facades\Settings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -58,8 +58,6 @@ class ExpireUnquotedBookingsJob implements ShouldQueue
 
     private function autoExpireDays(): int
     {
-        $setting = PlatformSetting::query()->where('key', 'booking.auto_expire_days')->first();
-
-        return $setting !== null ? (int) $setting->typedValue : self::DEFAULT_AUTO_EXPIRE_DAYS;
+        return (int) Settings::get('booking.auto_expire_days', self::DEFAULT_AUTO_EXPIRE_DAYS);
     }
 }

@@ -30,6 +30,7 @@ class Attachment extends Model
         'mime_type',
         'size_bytes',
         'scanned',
+        'variants',
     ];
 
     /**
@@ -40,6 +41,7 @@ class Attachment extends Model
         return [
             'size_bytes' => 'integer',
             'scanned' => 'boolean',
+            'variants' => 'array',
         ];
     }
 

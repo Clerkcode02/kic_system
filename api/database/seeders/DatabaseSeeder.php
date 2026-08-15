@@ -126,6 +126,13 @@ class DatabaseSeeder extends Seeder
         ]);
 
         PlatformSetting::factory()->create([
+            'key' => 'review.edit_window_hours',
+            'value' => '72',
+            'type' => 'integer',
+            'description' => 'Hours after submission a reviewer may still edit their review before it locks.',
+        ]);
+
+        PlatformSetting::factory()->create([
             'key' => 'booking.quotation_nudge_after_hours',
             'value' => '48',
             'type' => 'integer',

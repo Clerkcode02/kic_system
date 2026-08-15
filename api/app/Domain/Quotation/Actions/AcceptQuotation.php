@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Quotation\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Booking\Actions\TransitionBookingStatus;
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Payment\Enums\PaymentStatus;
@@ -92,18 +91,7 @@ final class AcceptQuotation implements Action
                 'status' => PaymentStatus::Pending,
             ]);
 
-            AuditLog::create([
-                'actor_id' => $actor->id,
-                'action' => 'quotation.accepted',
-                'auditable_type' => 'quotation',
-                'auditable_id' => $quotation->id,
-                'before_state' => ['status' => 'sent'],
-                'after_state' => ['status' => 'accepted', 'payment_intent_id' => $intent->intentId],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
-
-            QuotationAccepted::dispatch($quotation->fresh(), $payment);
+            QuotationAccepted::dispatch($quotation->fresh(), $payment, $actor);
 
             return [
                 'quotation' => $quotation->fresh(['lineItems', 'booking']),

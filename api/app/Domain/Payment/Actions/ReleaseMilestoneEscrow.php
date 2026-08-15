@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace App\Domain\Payment\Actions;
 
 use App\Domain\Audit\Models\AuditLog;
+use App\Domain\Dispute\Enums\DisputeStatus;
+use App\Domain\Dispute\Models\Dispute;
 use App\Domain\Freelance\Actions\CompleteContract;
 use App\Domain\Freelance\Enums\MilestoneStatus;
 use App\Domain\Freelance\Models\Milestone;
 use App\Domain\Payment\Enums\PaymentStatus;
 use App\Domain\Payment\Models\Payment;
 use App\Domain\Payment\Services\PaymentGateway;
-use App\Domain\Platform\Models\PlatformSetting;
 use App\Domain\User\Models\User;
 use App\Support\Action;
 use App\Support\ConflictException;
+use App\Support\Facades\Settings;
 use App\Support\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
 
@@ -45,6 +47,19 @@ final class ReleaseMilestoneEscrow implements Action
 
             if ($milestone->status === MilestoneStatus::Paid) {
                 return $milestone;
+            }
+
+            $hasOpenDispute = Dispute::query()
+                ->where('disputable_type', 'milestone')
+                ->where('disputable_id', $milestone->id)
+                ->whereIn('status', [DisputeStatus::Open, DisputeStatus::UnderReview])
+                ->exists();
+
+            if ($hasOpenDispute) {
+                throw new ConflictException(
+                    'This milestone has an open dispute — escrow release is frozen until it is resolved.',
+                    'milestone_escrow_frozen',
+                );
             }
 
             if ($milestone->status !== MilestoneStatus::Approved) {
@@ -115,8 +130,6 @@ final class ReleaseMilestoneEscrow implements Action
 
     private function platformFeePercentage(): float
     {
-        $setting = PlatformSetting::query()->where('key', 'platform.default_fee_percentage')->first();
-
-        return $setting !== null ? (float) $setting->typedValue : self::DEFAULT_PLATFORM_FEE_PERCENTAGE;
+        return (float) Settings::get('platform.default_fee_percentage', self::DEFAULT_PLATFORM_FEE_PERCENTAGE);
     }
 }

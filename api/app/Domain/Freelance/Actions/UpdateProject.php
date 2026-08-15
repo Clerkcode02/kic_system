@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Freelance\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Freelance\Enums\ProjectStatus;
 use App\Domain\Freelance\Events\ProjectScopeUpdated;
 use App\Domain\Freelance\Models\Project;
@@ -79,20 +78,15 @@ final class UpdateProject implements Action
                 ->values()
                 ->all();
 
-            AuditLog::create([
-                'actor_id' => $actor->id,
-                'action' => 'project.updated',
-                'auditable_type' => 'project',
-                'auditable_id' => $project->id,
-                'before_state' => $before,
-                'after_state' => $project->refresh()->only(['category_id', 'title', 'description', 'deadline', 'status']),
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
+            $after = $project->refresh()->only(['category_id', 'title', 'description', 'deadline', 'status']);
 
-            if ($affectedFreelancerUserIds !== []) {
-                ProjectScopeUpdated::dispatch($project, $affectedFreelancerUserIds);
-            }
+            // Always dispatched (for the audit trail — see
+            // ProjectScopeUpdated::auditAction()); the notification fan-out
+            // to affected freelancers a future listener would add is what's
+            // actually conditional on $affectedFreelancerUserIds being
+            // non-empty (SRS §19 "scope edits after proposals exist trigger
+            // notifications to all applicants").
+            ProjectScopeUpdated::dispatch($project, $affectedFreelancerUserIds, $actor, $before, $after);
 
             return $project;
         });

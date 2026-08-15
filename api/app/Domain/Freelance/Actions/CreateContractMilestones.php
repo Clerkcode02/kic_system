@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Freelance\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Freelance\Enums\ContractStatus;
 use App\Domain\Freelance\Enums\MilestoneStatus;
 use App\Domain\Freelance\Events\ContractMilestonesDefined;
@@ -74,18 +73,7 @@ final class CreateContractMilestones implements Action
                 'status' => MilestoneStatus::Pending,
             ]));
 
-            AuditLog::create([
-                'actor_id' => $actor->id,
-                'action' => 'contract.milestones_defined',
-                'auditable_type' => 'contract',
-                'auditable_id' => $contract->id,
-                'before_state' => ['milestone_count' => $existing->count()],
-                'after_state' => ['milestone_count' => $created->count()],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
-
-            ContractMilestonesDefined::dispatch($contract->fresh(), $actor);
+            ContractMilestonesDefined::dispatch($contract->fresh(), $actor, $existing->count(), $created->count());
 
             return $created;
         });

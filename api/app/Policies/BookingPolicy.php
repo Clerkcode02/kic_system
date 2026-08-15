@@ -51,4 +51,15 @@ class BookingPolicy
         return $user->can(PermissionName::BookingsConfirmCompletion->value)
             && $booking->customer_id === $user->id;
     }
+
+    /**
+     * Only the customer reviews the provider (SRS §19: "provider may reply
+     * once" implies a one-directional customer → provider review). Whether
+     * the booking is actually completed, and the one-per-transaction rule,
+     * are enforced by SubmitBookingReview — this only gates who may call it.
+     */
+    public function review(User $user, Booking $booking): bool
+    {
+        return $user->can(PermissionName::ReviewsCreate->value) && $booking->customer_id === $user->id;
+    }
 }

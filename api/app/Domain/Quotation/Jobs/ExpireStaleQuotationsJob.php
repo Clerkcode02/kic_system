@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Quotation\Jobs;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Booking\Actions\TransitionBookingStatus;
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Quotation\Events\QuotationExpired;
@@ -59,17 +58,6 @@ class ExpireStaleQuotationsJob implements ShouldQueue
                         if ($booking->status === BookingStatus::WaitingForCustomer) {
                             $transition->handle($booking, BookingStatus::QuotationExpired, null, 'Quotation validity window elapsed.');
                         }
-
-                        AuditLog::create([
-                            'actor_id' => null,
-                            'action' => 'quotation.expired',
-                            'auditable_type' => 'quotation',
-                            'auditable_id' => $quotation->id,
-                            'before_state' => ['status' => 'sent'],
-                            'after_state' => ['status' => 'expired'],
-                            'ip_address' => null,
-                            'user_agent' => 'ExpireStaleQuotationsJob',
-                        ]);
 
                         QuotationExpired::dispatch($quotation->fresh());
                     });

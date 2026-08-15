@@ -7,7 +7,7 @@ namespace App\Domain\Booking\Jobs;
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Booking\Events\UnquotedBookingNudgeDue;
 use App\Domain\Booking\Models\Booking;
-use App\Domain\Platform\Models\PlatformSetting;
+use App\Support\Facades\Settings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -56,8 +56,6 @@ class NudgeUnquotedProviderJob implements ShouldQueue
 
     private function nudgeAfterHours(): int
     {
-        $setting = PlatformSetting::query()->where('key', 'booking.quotation_nudge_after_hours')->first();
-
-        return $setting !== null ? (int) $setting->typedValue : self::DEFAULT_NUDGE_AFTER_HOURS;
+        return (int) Settings::get('booking.quotation_nudge_after_hours', self::DEFAULT_NUDGE_AFTER_HOURS);
     }
 }

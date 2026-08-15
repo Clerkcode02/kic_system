@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Payment\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Booking\Actions\TransitionBookingStatus;
 use App\Domain\Booking\Enums\BookingPaymentStatus;
 use App\Domain\Booking\Enums\BookingStatus;
@@ -15,11 +14,11 @@ use App\Domain\Payment\Events\RefundProcessed;
 use App\Domain\Payment\Models\Payment;
 use App\Domain\Payment\Models\Refund;
 use App\Domain\Payment\Services\PaymentGateway;
-use App\Domain\Platform\Models\PlatformSetting;
 use App\Domain\User\Enums\PermissionName;
 use App\Domain\User\Models\User;
 use App\Support\Action;
 use App\Support\ConflictException;
+use App\Support\Facades\Settings;
 use App\Support\PaymentsBlockedException;
 use App\Support\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
@@ -81,20 +80,9 @@ final class IssueRefund implements Action
             $refund->update(['stripe_refund_id' => $result->refundId, 'status' => RefundStatus::Succeeded]);
             $payment->update(['status' => PaymentStatus::Refunded]);
 
-            AuditLog::create([
-                'actor_id' => $actor->id,
-                'action' => 'payment.refunded',
-                'auditable_type' => 'payment',
-                'auditable_id' => $payment->id,
-                'before_state' => ['status' => PaymentStatus::Succeeded->value],
-                'after_state' => ['status' => PaymentStatus::Refunded->value, 'refund_id' => $refund->id, 'amount' => $refundAmount->toDecimal()],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
-
             $this->reflectOnBooking($payment, $actor, $reason);
 
-            RefundProcessed::dispatch($refund);
+            RefundProcessed::dispatch($refund, $actor);
 
             return $refund->fresh();
         });
@@ -137,8 +125,7 @@ final class IssueRefund implements Action
 
     private function thresholdAmount(string $currency): Money
     {
-        $setting = PlatformSetting::query()->where('key', 'refund.large_amount_threshold')->first();
-        $value = $setting !== null ? (float) $setting->typedValue : (float) self::DEFAULT_LARGE_REFUND_THRESHOLD;
+        $value = (float) Settings::get('refund.large_amount_threshold', (float) self::DEFAULT_LARGE_REFUND_THRESHOLD);
 
         return Money::fromDecimal(number_format($value, 2, '.', ''), $currency);
     }

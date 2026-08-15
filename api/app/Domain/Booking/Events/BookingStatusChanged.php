@@ -22,4 +22,34 @@ class BookingStatusChanged implements Auditable
         public readonly ?User $actor,
     ) {
     }
+
+    public function auditActorId(): ?string
+    {
+        return $this->actor?->id;
+    }
+
+    public function auditAction(): string
+    {
+        return 'booking.status_changed';
+    }
+
+    public function auditableType(): string
+    {
+        return 'booking';
+    }
+
+    public function auditableId(): string
+    {
+        return $this->booking->id;
+    }
+
+    public function auditBeforeState(): ?array
+    {
+        return ['status' => $this->fromStatus];
+    }
+
+    public function auditAfterState(): ?array
+    {
+        return ['status' => $this->toStatus];
+    }
 }

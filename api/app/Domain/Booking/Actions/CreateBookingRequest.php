@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Booking\Actions;
 
-use App\Domain\Audit\Models\AuditLog;
 use App\Domain\Booking\Enums\BookingPaymentStatus;
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Booking\Events\BookingCreated;
@@ -115,17 +114,6 @@ final class CreateBookingRequest implements Action
                 'to_status' => $status->value,
                 'changed_by' => $customer->id,
                 'note' => 'Booking requested by customer.',
-            ]);
-
-            AuditLog::create([
-                'actor_id' => $customer->id,
-                'action' => 'booking.created',
-                'auditable_type' => 'booking',
-                'auditable_id' => $booking->id,
-                'before_state' => null,
-                'after_state' => ['status' => $status->value],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
             ]);
 
             BookingCreated::dispatch($booking);

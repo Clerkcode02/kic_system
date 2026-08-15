@@ -17,4 +17,34 @@ class BusinessVerificationApproved implements Auditable
     public function __construct(public readonly Business $business)
     {
     }
+
+    public function auditActorId(): ?string
+    {
+        return null;
+    }
+
+    public function auditAction(): string
+    {
+        return 'business.verification_approved';
+    }
+
+    public function auditableType(): string
+    {
+        return 'business';
+    }
+
+    public function auditableId(): string
+    {
+        return $this->business->id;
+    }
+
+    public function auditBeforeState(): ?array
+    {
+        return ['verification_status' => 'pending'];
+    }
+
+    public function auditAfterState(): ?array
+    {
+        return ['verification_status' => 'verified'];
+    }
 }

@@ -31,6 +31,7 @@ class FreelancerProfile extends Model
         'currency',
         'years_experience',
         'approval_status',
+        'rating_avg',
         'stripe_connect_account_id',
         'stripe_charges_enabled',
         'stripe_payouts_enabled',
