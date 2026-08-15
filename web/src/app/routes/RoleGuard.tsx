@@ -24,16 +24,15 @@ export function RoleGuard({ allowedRoles, requireVerified = false }: RoleGuardPr
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  const hasAllowedRole = user.roles.some((role) => allowedRoles.includes(role))
-  if (!hasAllowedRole) {
+  if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />
   }
 
-  if (requireVerified && !user.is_verified) {
+  if (requireVerified && !user.email_verified_at) {
     return <Navigate to="/verify-pending" replace />
   }
 
-  if (user.is_suspended) {
+  if (user.status === 'suspended') {
     return <Navigate to="/suspended" replace />
   }
 

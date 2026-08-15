@@ -4,11 +4,9 @@ import type { Role } from '@/features/auth/types'
 
 const ROLE_HOME: Record<Role, string> = {
   customer: '/customer',
-  provider_owner: '/provider',
-  provider_staff: '/provider',
+  provider: '/provider',
   freelancer: '/freelancer',
   admin: '/admin',
-  super_admin: '/admin',
 }
 
 export function HomePage() {
@@ -17,6 +15,5 @@ export function HomePage() {
   if (isLoading) return null
   if (!isAuthenticated || !user) return <Navigate to="/login" replace />
 
-  const destination = user.roles.map((role) => ROLE_HOME[role]).find(Boolean) ?? '/login'
-  return <Navigate to={destination} replace />
+  return <Navigate to={ROLE_HOME[user.role]} replace />
 }

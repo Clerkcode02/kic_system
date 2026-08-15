@@ -1,6 +1,8 @@
+import { Routes, Route } from 'react-router-dom'
 import { Card } from '@/components'
+import { OnboardingWizard } from '@/features/freelance/onboarding/components/OnboardingWizard'
 
-export function FreelancerDashboard() {
+function FreelancerHome() {
   return (
     <div className="p-6">
       <Card>
@@ -8,5 +10,14 @@ export function FreelancerDashboard() {
         <p className="mt-1 text-sm text-gray-500">Projects, proposals, and contracts go here.</p>
       </Card>
     </div>
+  )
+}
+
+export function FreelancerDashboard() {
+  return (
+    <Routes>
+      <Route index element={<FreelancerHome />} />
+      <Route path="onboarding" element={<OnboardingWizard />} />
+    </Routes>
   )
 }
