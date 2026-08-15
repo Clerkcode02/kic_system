@@ -65,6 +65,7 @@ use App\Http\Controllers\Api\V1\Shared\Review\BusinessReviewController;
 use App\Http\Controllers\Api\V1\Shared\Review\ProjectReviewController;
 use App\Http\Controllers\Api\V1\Shared\Review\ReplyToReviewController;
 use App\Http\Controllers\Api\V1\Shared\Upload\UploadController;
+use App\Http\Controllers\Api\V1\Shared\User\AddressController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/auth')->name('auth.')->middleware('throttle:auth')->group(function () {
@@ -159,6 +160,11 @@ Route::prefix('v1/milestones')->name('milestones.')->middleware('api.protected')
     Route::get('{milestone}/deliverables', [MilestoneDeliverableController::class, 'index'])->name('deliverables.index');
     Route::post('{milestone}/deliverables/upload-url', RequestDeliverableUploadUrlController::class)->name('deliverables.upload-url');
     Route::post('{milestone}/deliverables', ConfirmDeliverableController::class)->name('deliverables.store');
+});
+
+Route::prefix('v1/me/addresses')->name('addresses.')->middleware('api.protected')->group(function () {
+    Route::get('/', [AddressController::class, 'index'])->name('index');
+    Route::post('/', [AddressController::class, 'store'])->name('store');
 });
 
 Route::prefix('v1/me/notification-preferences')->name('notification-preferences.')->middleware('api.protected')->group(function () {

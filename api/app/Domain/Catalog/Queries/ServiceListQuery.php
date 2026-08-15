@@ -36,7 +36,13 @@ final class ServiceListQuery
             )
             ->with([
                 'category:id,name,slug',
-                'business:id,legal_name,rating_avg',
+                // ST_Y/ST_X pulled in the same batched eager-load query as
+                // the rest of the business columns — calling
+                // Business::locationPoint() per row here would be an N+1
+                // (see ServiceListNPlusOneTest).
+                'business' => fn ($q) => $q
+                    ->select('id', 'legal_name', 'rating_avg')
+                    ->selectRaw('ST_Y(location::geometry) as lat, ST_X(location::geometry) as lng'),
             ]);
 
         if (! empty($filters['category'])) {

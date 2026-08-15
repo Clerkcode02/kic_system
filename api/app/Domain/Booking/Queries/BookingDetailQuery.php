@@ -22,6 +22,7 @@ final class BookingDetailQuery
                 'address',
                 'statusHistory' => fn ($q) => $q->orderBy('created_at'),
                 'attachments' => fn ($q) => $q->orderBy('created_at'),
+                'quotations' => fn ($q) => $q->with('lineItems')->orderByDesc('revision_number'),
             ])
             ->findOrFail($bookingId);
     }

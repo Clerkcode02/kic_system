@@ -18,6 +18,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @property float|null $lat Only present when a query explicitly selects
+ *      ST_Y(location::geometry) — see ServiceListQuery's batched eager load.
+ * @property float|null $lng Only present when a query explicitly selects
+ *      ST_X(location::geometry) — see ServiceListQuery's batched eager load.
+ */
 class Business extends Model
 {
     /** @use HasFactory<BusinessFactory> */

@@ -47,6 +47,7 @@ class BookingResource extends JsonResource
             'address' => $this->whenLoaded('address', fn () => new AddressResource($this->address)),
             'status_history' => BookingStatusHistoryResource::collection($this->whenLoaded('statusHistory')),
             'attachments' => BookingAttachmentResource::collection($this->whenLoaded('attachments')),
+            'quotations' => QuotationResource::collection($this->whenLoaded('quotations')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
