@@ -105,6 +105,79 @@
                 }
             }
         },
+        "/v1/me/addresses": {
+            "get": {
+                "operationId": "addresses.index",
+                "tags": [
+                    "Address"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `AddressResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AddressResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "addresses.store",
+                "tags": [
+                    "Address"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreAddressRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`AddressResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AddressResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
         "/v1/milestones/{milestone}/approve": {
             "post": {
                 "operationId": "milestones.approve",
@@ -696,7 +769,8 @@
                                                     "required": [
                                                         "address",
                                                         "status_history",
-                                                        "attachments"
+                                                        "attachments",
+                                                        "quotations"
                                                     ]
                                                 }
                                             ]
@@ -1861,6 +1935,121 @@
                 }
             }
         },
+        "/v1/freelancer/me/contracts": {
+            "get": {
+                "operationId": "freelancer.me.contracts",
+                "tags": [
+                    "Contract"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `ContractResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/ContractResource"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "milestones"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "next_cursor": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The \"cursor\" that points to the next set of items."
+                                                },
+                                                "prev_cursor": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The \"cursor\" that points to the previous set of items."
+                                                }
+                                            },
+                                            "required": [
+                                                "path",
+                                                "per_page",
+                                                "next_cursor",
+                                                "prev_cursor"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/payments/intents": {
             "post": {
                 "operationId": "payments.intents.store",
@@ -1916,6 +2105,68 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/v1/provider/me/dashboard": {
+            "get": {
+                "operationId": "provider.me.dashboard",
+                "tags": [
+                    "Dashboard"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`ProviderDashboardResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProviderDashboardResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/v1/freelancer/me/dashboard": {
+            "get": {
+                "operationId": "freelancer.me.dashboard",
+                "tags": [
+                    "Dashboard"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`FreelancerDashboardResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/FreelancerDashboardResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
                     }
                 }
             }
@@ -2229,6 +2480,124 @@
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/components/schemas/PayoutResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "next_cursor": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The \"cursor\" that points to the next set of items."
+                                                },
+                                                "prev_cursor": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The \"cursor\" that points to the previous set of items."
+                                                }
+                                            },
+                                            "required": [
+                                                "path",
+                                                "per_page",
+                                                "next_cursor",
+                                                "prev_cursor"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/v1/freelancer/me/earnings": {
+            "get": {
+                "operationId": "freelancer.me.earnings",
+                "tags": [
+                    "Earnings"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `FreelancerEarningResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/FreelancerEarningResource"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "milestone_title"
+                                                        ]
+                                                    }
+                                                ]
                                             }
                                         },
                                         "links": {
@@ -5798,6 +6167,12 @@
                             "$ref": "#/components/schemas/BookingAttachmentResource"
                         }
                     },
+                    "quotations": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/QuotationResource"
+                        }
+                    },
                     "created_at": {
                         "type": [
                             "string",
@@ -6303,6 +6678,25 @@
                         ],
                         "format": "date-time"
                     },
+                    "project": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "$ref": "#/components/schemas/ProjectStatus"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "title",
+                            "status"
+                        ]
+                    },
                     "milestones": {
                         "type": "array",
                         "items": {
@@ -6451,6 +6845,103 @@
                     "updated_at"
                 ],
                 "title": "DisputeResource"
+            },
+            "FreelancerDashboardResource": {
+                "type": "object",
+                "properties": {
+                    "open_proposal_count": {
+                        "type": "string"
+                    },
+                    "active_contract_count": {
+                        "type": "string"
+                    },
+                    "attention_milestones": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MilestoneResource"
+                        }
+                    },
+                    "earnings": {
+                        "type": "object",
+                        "properties": {
+                            "total": {
+                                "type": "string"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "const": "CAD"
+                            }
+                        },
+                        "required": [
+                            "total",
+                            "currency"
+                        ]
+                    }
+                },
+                "required": [
+                    "open_proposal_count",
+                    "active_contract_count",
+                    "attention_milestones",
+                    "earnings"
+                ],
+                "title": "FreelancerDashboardResource"
+            },
+            "FreelancerEarningResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "milestone_id": {
+                        "type": "string"
+                    },
+                    "milestone_title": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "amount": {
+                        "type": "string"
+                    },
+                    "platform_fee_amount": {
+                        "type": "string"
+                    },
+                    "net_amount": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "stripe_transfer_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "released": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "milestone_id",
+                    "amount",
+                    "platform_fee_amount",
+                    "net_amount",
+                    "currency",
+                    "stripe_transfer_id",
+                    "released",
+                    "created_at"
+                ],
+                "title": "FreelancerEarningResource"
             },
             "LoginRequest": {
                 "type": "object",
@@ -7183,6 +7674,59 @@
                 ],
                 "title": "ProviderAvailabilityResource"
             },
+            "ProviderDashboardResource": {
+                "type": "object",
+                "properties": {
+                    "today_schedule": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/BookingListResource"
+                        }
+                    },
+                    "pending_quotations": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/BookingListResource"
+                        }
+                    },
+                    "upcoming_bookings": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/BookingListResource"
+                        }
+                    },
+                    "earnings": {
+                        "type": "object",
+                        "properties": {
+                            "total": {
+                                "type": "string"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "const": "CAD"
+                            },
+                            "recent_payouts": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/PayoutResource"
+                                }
+                            }
+                        },
+                        "required": [
+                            "total",
+                            "currency",
+                            "recent_payouts"
+                        ]
+                    }
+                },
+                "required": [
+                    "today_schedule",
+                    "pending_quotations",
+                    "upcoming_bookings",
+                    "earnings"
+                ],
+                "title": "ProviderDashboardResource"
+            },
             "QuotationLineItemResource": {
                 "type": "object",
                 "properties": {
@@ -7860,12 +8404,31 @@
                             },
                             "rating_avg": {
                                 "type": "string"
+                            },
+                            "location": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "properties": {
+                                    "lat": {
+                                        "type": "number"
+                                    },
+                                    "lng": {
+                                        "type": "number"
+                                    }
+                                },
+                                "required": [
+                                    "lat",
+                                    "lng"
+                                ]
                             }
                         },
                         "required": [
                             "id",
                             "legal_name",
-                            "rating_avg"
+                            "rating_avg",
+                            "location"
                         ]
                     }
                 },
@@ -8052,6 +8615,77 @@
                     "business"
                 ],
                 "title": "ServiceResource"
+            },
+            "StoreAddressRequest": {
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "street": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "unit": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "city": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "state_province": {
+                        "type": "string",
+                        "enum": [
+                            "AB",
+                            "BC",
+                            "MB",
+                            "NB",
+                            "NL",
+                            "NS",
+                            "NT",
+                            "NU",
+                            "ON",
+                            "PE",
+                            "QC",
+                            "SK",
+                            "YT"
+                        ]
+                    },
+                    "postal_code": {
+                        "type": "string",
+                        "maxLength": 16
+                    },
+                    "lat": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "lng": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                    },
+                    "is_default": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "street",
+                    "city",
+                    "state_province",
+                    "postal_code",
+                    "lat",
+                    "lng"
+                ],
+                "title": "StoreAddressRequest"
             },
             "StoreBookingRequest": {
                 "type": "object",

@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/addresses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["addresses.index"];
+        put?: never;
+        post: operations["addresses.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/milestones/{milestone}/approve": {
         parameters: {
             query?: never;
@@ -372,6 +388,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/freelancer/me/contracts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["freelancer.me.contracts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/payments/intents": {
         parameters: {
             query?: never;
@@ -382,6 +414,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["payments.intents.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/provider/me/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["provider.me.dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/freelancer/me/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["freelancer.me.dashboard"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -444,6 +508,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["provider.me.earnings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/freelancer/me/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["freelancer.me.earnings"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1290,6 +1370,7 @@ export interface components {
             address?: components["schemas"]["AddressResource"];
             status_history?: components["schemas"]["BookingStatusHistoryResource"][];
             attachments?: components["schemas"]["BookingAttachmentResource"][];
+            quotations?: components["schemas"]["QuotationResource"][];
             /** Format: date-time */
             created_at: string | null;
             /** Format: date-time */
@@ -1423,6 +1504,11 @@ export interface components {
             status: components["schemas"]["ContractStatus"];
             /** Format: date-time */
             created_at: string | null;
+            project?: {
+                id: string;
+                title: string;
+                status: components["schemas"]["ProjectStatus"];
+            };
             milestones?: components["schemas"]["MilestoneResource"][];
         };
         /**
@@ -1461,6 +1547,31 @@ export interface components {
             created_at: string | null;
             /** Format: date-time */
             updated_at: string | null;
+        };
+        /** FreelancerDashboardResource */
+        FreelancerDashboardResource: {
+            open_proposal_count: string;
+            active_contract_count: string;
+            attention_milestones: components["schemas"]["MilestoneResource"][];
+            earnings: {
+                total: string;
+                /** @constant */
+                currency: "CAD";
+            };
+        };
+        /** FreelancerEarningResource */
+        FreelancerEarningResource: {
+            id: string;
+            milestone_id: string;
+            milestone_title?: string | null;
+            amount: string;
+            platform_fee_amount: string;
+            net_amount: string;
+            currency: string;
+            stripe_transfer_id: string | null;
+            released: boolean;
+            /** Format: date-time */
+            created_at: string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -1670,6 +1781,18 @@ export interface components {
             end_time: string;
             is_active: boolean;
         };
+        /** ProviderDashboardResource */
+        ProviderDashboardResource: {
+            today_schedule: components["schemas"]["BookingListResource"][];
+            pending_quotations: components["schemas"]["BookingListResource"][];
+            upcoming_bookings: components["schemas"]["BookingListResource"][];
+            earnings: {
+                total: string;
+                /** @constant */
+                currency: "CAD";
+                recent_payouts: components["schemas"]["PayoutResource"][];
+            };
+        };
         /** QuotationLineItemResource */
         QuotationLineItemResource: {
             id: string;
@@ -1867,6 +1990,10 @@ export interface components {
                 id: string;
                 legal_name: string;
                 rating_avg: string;
+                location: {
+                    lat: number;
+                    lng: number;
+                } | null;
             };
         };
         /** ServicePricingResource */
@@ -1914,6 +2041,19 @@ export interface components {
                 rating_avg: string;
             };
             pricing_tiers?: components["schemas"]["ServicePricingTierResource"][];
+        };
+        /** StoreAddressRequest */
+        StoreAddressRequest: {
+            label?: string | null;
+            street: string;
+            unit?: string | null;
+            city: string;
+            /** @enum {string} */
+            state_province: "AB" | "BC" | "MB" | "NB" | "NL" | "NS" | "NT" | "NU" | "ON" | "PE" | "QC" | "SK" | "YT";
+            postal_code: string;
+            lat: number;
+            lng: number;
+            is_default?: boolean;
         };
         /** StoreBookingRequest */
         StoreBookingRequest: {
@@ -2237,6 +2377,56 @@ export interface operations {
             };
             403: components["responses"]["AuthorizationException"];
             404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "addresses.index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Array of `AddressResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AddressResource"][];
+                    };
+                };
+            };
+        };
+    };
+    "addresses.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreAddressRequest"];
+            };
+        };
+        responses: {
+            /** @description `AddressResource` */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AddressResource"];
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
             422: components["responses"]["ValidationException"];
         };
     };
@@ -3156,6 +3346,44 @@ export interface operations {
             404: components["responses"]["ModelNotFoundException"];
         };
     };
+    "freelancer.me.contracts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated set of `ContractResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: (components["schemas"]["ContractResource"] & Record<string, never>)[];
+                        links: {
+                            first: string | null;
+                            last: string | null;
+                            prev: string | null;
+                            next: string | null;
+                        };
+                        meta: {
+                            /** @description Base path for paginator generated URLs. */
+                            path: string | null;
+                            /** @description Number of items shown per page. */
+                            per_page: number;
+                            /** @description The "cursor" that points to the next set of items. */
+                            next_cursor: string | null;
+                            /** @description The "cursor" that points to the previous set of items. */
+                            prev_cursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+    };
     "payments.intents.store": {
         parameters: {
             query?: never;
@@ -3185,6 +3413,52 @@ export interface operations {
             };
             403: components["responses"]["AuthorizationException"];
             422: components["responses"]["ValidationException"];
+        };
+    };
+    "provider.me.dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `ProviderDashboardResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProviderDashboardResource"];
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "freelancer.me.dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `FreelancerDashboardResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["FreelancerDashboardResource"];
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
         };
     };
     "disputes.index": {
@@ -3358,6 +3632,45 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["PayoutResource"][];
+                        links: {
+                            first: string | null;
+                            last: string | null;
+                            prev: string | null;
+                            next: string | null;
+                        };
+                        meta: {
+                            /** @description Base path for paginator generated URLs. */
+                            path: string | null;
+                            /** @description Number of items shown per page. */
+                            per_page: number;
+                            /** @description The "cursor" that points to the next set of items. */
+                            next_cursor: string | null;
+                            /** @description The "cursor" that points to the previous set of items. */
+                            prev_cursor: string | null;
+                        };
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "freelancer.me.earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated set of `FreelancerEarningResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: (components["schemas"]["FreelancerEarningResource"] & Record<string, never>)[];
                         links: {
                             first: string | null;
                             last: string | null;

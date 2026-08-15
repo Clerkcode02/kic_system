@@ -15,6 +15,9 @@ use App\Http\Controllers\Api\V1\Customer\Proposal\HireProposalController;
 use App\Http\Controllers\Api\V1\Customer\Proposal\ShortlistProposalController;
 use App\Http\Controllers\Api\V1\Customer\Quotation\AcceptQuotationController;
 use App\Http\Controllers\Api\V1\Customer\Quotation\RejectQuotationController;
+use App\Http\Controllers\Api\V1\Freelancer\Contract\ContractController as FreelancerContractController;
+use App\Http\Controllers\Api\V1\Freelancer\Dashboard\DashboardController as FreelancerDashboardController;
+use App\Http\Controllers\Api\V1\Freelancer\Payment\EarningsController as FreelancerEarningsController;
 use App\Http\Controllers\Api\V1\Freelancer\Proposal\ListMyProposalsController;
 use App\Http\Controllers\Api\V1\Freelancer\Proposal\StoreProposalController;
 use App\Http\Controllers\Api\V1\Freelancer\Proposal\WithdrawProposalController;
@@ -23,6 +26,7 @@ use App\Http\Controllers\Api\V1\Provider\Booking\CompleteBookingController;
 use App\Http\Controllers\Api\V1\Provider\Business\AvailabilityController as ProviderAvailabilityManagementController;
 use App\Http\Controllers\Api\V1\Provider\Business\BusinessDocumentController;
 use App\Http\Controllers\Api\V1\Provider\Business\BusinessProfileController;
+use App\Http\Controllers\Api\V1\Provider\Business\DashboardController as ProviderDashboardController;
 use App\Http\Controllers\Api\V1\Provider\Business\EarningsController;
 use App\Http\Controllers\Api\V1\Provider\Business\StripeConnectController;
 use App\Http\Controllers\Api\V1\Provider\Business\SubmitForVerificationController;
@@ -219,6 +223,8 @@ Route::prefix('v1/admin')->name('admin.')->middleware(['api.protected', 'role:ad
 });
 
 Route::prefix('v1/provider')->name('provider.')->middleware(['api.protected', 'role:provider_owner,provider_staff'])->group(function () {
+    Route::get('me/dashboard', [ProviderDashboardController::class, 'index'])->name('me.dashboard');
+
     Route::get('me', [BusinessProfileController::class, 'show'])->name('me.show');
     Route::patch('me', [BusinessProfileController::class, 'update'])->name('me.update');
 
@@ -240,4 +246,10 @@ Route::prefix('v1/provider')->name('provider.')->middleware(['api.protected', 'r
     Route::get('me/stripe/status', [StripeConnectController::class, 'status'])->name('me.stripe.status');
 
     Route::get('me/earnings', [EarningsController::class, 'index'])->name('me.earnings');
+});
+
+Route::prefix('v1/freelancer')->name('freelancer.')->middleware(['api.protected', 'role:freelancer'])->group(function () {
+    Route::get('me/dashboard', [FreelancerDashboardController::class, 'index'])->name('me.dashboard');
+    Route::get('me/contracts', [FreelancerContractController::class, 'index'])->name('me.contracts');
+    Route::get('me/earnings', [FreelancerEarningsController::class, 'index'])->name('me.earnings');
 });

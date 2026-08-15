@@ -26,6 +26,11 @@ class ContractResource extends JsonResource
             'currency' => $this->currency,
             'status' => $this->status,
             'created_at' => $this->created_at,
+            'project' => $this->whenLoaded('project', fn () => [
+                'id' => $this->project->id,
+                'title' => $this->project->title,
+                'status' => $this->project->status,
+            ]),
             'milestones' => MilestoneResource::collection($this->whenLoaded('milestones')),
         ];
     }
