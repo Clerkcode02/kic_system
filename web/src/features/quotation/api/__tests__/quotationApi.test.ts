@@ -6,7 +6,49 @@ const apiClientMock = vi.hoisted(() => ({
 
 vi.mock('@/lib/api', () => ({ apiClient: apiClientMock }))
 
-const { acceptQuotation, rejectQuotation } = await import('../quotationApi')
+const { acceptQuotation, rejectQuotation, sendQuotation, reviseQuotation } = await import(
+  '../quotationApi'
+)
+
+describe('sendQuotation', () => {
+  it('posts raw cost inputs to the booking quotations endpoint', async () => {
+    apiClientMock.post.mockResolvedValue({ data: { data: { id: 'q1' } } })
+
+    await sendQuotation('booking-1', {
+      labor_cost: 100,
+      materials_cost: 50,
+      additional_fees: 10,
+      discount_amount: 5,
+      line_items: [{ description: 'Part', quantity: 1, unit_price: 20 }],
+    })
+
+    expect(apiClientMock.post).toHaveBeenCalledWith('/bookings/booking-1/quotations', {
+      labor_cost: 100,
+      materials_cost: 50,
+      additional_fees: 10,
+      discount_amount: 5,
+      line_items: [{ description: 'Part', quantity: 1, unit_price: 20 }],
+    })
+  })
+})
+
+describe('reviseQuotation', () => {
+  it('posts to the revise endpoint for the given quotation', async () => {
+    apiClientMock.post.mockResolvedValue({ data: { data: { id: 'q2' } } })
+
+    await reviseQuotation('q1', {
+      labor_cost: 120,
+      materials_cost: 50,
+      additional_fees: 10,
+    })
+
+    expect(apiClientMock.post).toHaveBeenCalledWith('/quotations/q1/revise', {
+      labor_cost: 120,
+      materials_cost: 50,
+      additional_fees: 10,
+    })
+  })
+})
 
 describe('acceptQuotation', () => {
   it('sends the Idempotency-Key header', async () => {
