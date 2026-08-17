@@ -6,6 +6,7 @@ namespace App\Domain\User\Actions;
 
 use App\Domain\User\Enums\UserStatus;
 use App\Domain\User\Models\User;
+use App\Domain\User\Services\FailedLoginMonitor;
 use App\Domain\User\Services\IssuesAuthCredentials;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,6 +16,7 @@ class LoginUser
 {
     public function __construct(
         private readonly IssuesAuthCredentials $credentials,
+        private readonly FailedLoginMonitor $failedLoginMonitor,
     ) {
     }
 
@@ -26,6 +28,8 @@ class LoginUser
         $user = User::where('email', $email)->first();
 
         if (! $user || ! Hash::check($password, $user->password)) {
+            $this->failedLoginMonitor->record($request, $email);
+
             throw ValidationException::withMessages([
                 'email' => ['These credentials do not match our records.'],
             ]);

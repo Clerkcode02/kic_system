@@ -6,6 +6,7 @@ namespace App\Domain\Catalog\Actions;
 
 use App\Domain\Catalog\Models\Service;
 use App\Domain\Catalog\Models\ServicePricingTier;
+use App\Domain\Catalog\Services\ServicePricingCache;
 use App\Support\Action;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -17,12 +18,17 @@ class UpdateService implements Action
         'base_price', 'estimated_duration_minutes', 'is_active',
     ];
 
+    public function __construct(
+        private readonly ServicePricingCache $cache,
+    ) {
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */
     public function handle(Service $service, array $data): Service
     {
-        return DB::transaction(function () use ($service, $data): Service {
+        $updated = DB::transaction(function () use ($service, $data): Service {
             $service->fill(Arr::only($data, self::FILLABLE));
             $service->save();
 
@@ -44,5 +50,9 @@ class UpdateService implements Action
 
             return $service->load('pricingTiers', 'category');
         });
+
+        $this->cache->forget($updated->id);
+
+        return $updated;
     }
 }

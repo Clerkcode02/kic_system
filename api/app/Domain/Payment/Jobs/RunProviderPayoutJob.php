@@ -10,6 +10,7 @@ use App\Domain\Payment\Enums\PayoutStatus;
 use App\Domain\Payment\Events\PayoutCompleted;
 use App\Domain\Payment\Models\Payment;
 use App\Domain\Payment\Models\Payout;
+use App\Domain\Payment\Services\PayoutAnomalyDetector;
 use App\Support\ValueObjects\Money;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -41,7 +42,7 @@ final class RunProviderPayoutJob implements ShouldQueue
         $this->onQueue('payouts');
     }
 
-    public function handle(): void
+    public function handle(PayoutAnomalyDetector $anomalyDetector): void
     {
         $unswept = Payment::query()
             ->where('payable_type', 'booking')
@@ -58,14 +59,14 @@ final class RunProviderPayoutJob implements ShouldQueue
             });
 
         foreach ($unswept as $providerId => $payments) {
-            DB::transaction(function () use ($providerId, $payments) {
+            $payout = DB::transaction(function () use ($providerId, $payments) {
                 $total = $payments->reduce(
                     fn (?Money $carry, Payment $p) => $carry === null ? $p->provider_net_amount : $carry->add($p->provider_net_amount),
                     null,
                 );
 
                 if ($total === null || $total->isZero()) {
-                    return;
+                    return null;
                 }
 
                 $payout = Payout::create([
@@ -81,7 +82,17 @@ final class RunProviderPayoutJob implements ShouldQueue
                     ->update(['payout_id' => $payout->id]);
 
                 PayoutCompleted::dispatch($payout);
+
+                return $payout;
             });
+
+            // Anomaly detection reads other Paid payouts for this provider,
+            // so it runs after the transaction commits rather than inside
+            // it (SRS §17 "unusual payout patterns" is best-effort alerting,
+            // not a gate on the payout itself).
+            if ($payout !== null) {
+                $anomalyDetector->detect($payout);
+            }
         }
     }
 }

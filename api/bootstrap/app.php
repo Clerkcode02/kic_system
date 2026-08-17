@@ -23,6 +23,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
 
+        // SRS §17 baseline web-hardening headers — appended to the global
+        // api stack (not just api.protected) so public/unauthenticated
+        // routes get them too.
+        $middleware->api(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
+
         $middleware->alias([
             'verified.account' => \App\Http\Middleware\EnsureVerified::class,
             'not-suspended' => \App\Http\Middleware\EnsureNotSuspended::class,

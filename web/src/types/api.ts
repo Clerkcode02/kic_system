@@ -5877,7 +5877,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["ServiceResource"] & Record<string, never>;
+                        data: components["schemas"]["ServiceResource"];
                     };
                 };
             };
@@ -5901,7 +5901,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["ServicePricingResource"] & Record<string, never>;
+                        data: components["schemas"]["ServicePricingResource"];
                     };
                 };
             };

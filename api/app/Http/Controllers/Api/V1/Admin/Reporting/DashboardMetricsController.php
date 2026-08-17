@@ -19,7 +19,8 @@ class DashboardMetricsController extends Controller
     {
         abort_unless($request->user()?->can(PermissionName::AnalyticsView->value), 403);
 
-        $snapshots = AdminAnalyticsSnapshot::query()
+        // SRS §18: analytics reads never hit the primary write connection.
+        $snapshots = AdminAnalyticsSnapshot::on('pgsql_read')
             ->orderByDesc('snapshot_at')
             ->limit(self::HISTORY_LIMIT)
             ->get()
