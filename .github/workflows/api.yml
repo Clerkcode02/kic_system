@@ -21,6 +21,21 @@ jobs:
   check:
     runs-on: ubuntu-latest
 
+    # Applies to every step below, not just "Run migrations" — `composer
+    # check` (pint+larastan+pest) and `app:export-openapi` also connect to
+    # this DB. Previously only the migrate step set these, so every later
+    # step fell back to .env.example's DB_PORT=5433 (correct for local
+    # Docker Compose, wrong for this job's raw `services:` container) and
+    # every DB-touching test failed with "Connection refused".
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: marketplace_testing
+      DB_USERNAME: marketplace
+      DB_PASSWORD: marketplace
+      CACHE_STORE: array
+
     services:
       postgres:
         image: postgis/postgis:16-3.4
@@ -54,14 +69,6 @@ jobs:
           php artisan key:generate
 
       - name: Run migrations
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: marketplace_testing
-          DB_USERNAME: marketplace
-          DB_PASSWORD: marketplace
-          CACHE_STORE: array
         run: php artisan migrate --force
 
       # CLAUDE.md §11: "Run composer pint, composer larastan, php artisan
