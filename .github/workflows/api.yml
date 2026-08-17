@@ -68,6 +68,14 @@ jobs:
       # test, and npm run typecheck before declaring a task done" — `check`
       # bundles the first three (lint/analyse/test) into one script.
       - name: Lint, static analysis, tests
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: marketplace_testing
+          DB_USERNAME: marketplace
+          DB_PASSWORD: marketplace
+          CACHE_STORE: array
         run: composer check
 
       # CLAUDE.md task: "a CI check that fails if the committed spec is
