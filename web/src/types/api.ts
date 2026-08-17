@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/disputes/{dispute}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["admin.disputes.assign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/attachments/{attachment}/url": {
         parameters: {
             query?: never;
@@ -212,6 +228,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/businesses/verification-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["admin.businesses.verification-queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/businesses/{business}/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["admin.businesses.verification.show"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/businesses/{business}/verification/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["admin.businesses.verification.approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/businesses/{business}/verification/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["admin.businesses.verification.reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/businesses/verification/bulk-approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["admin.businesses.verification.bulk-approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/businesses/verification/bulk-reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["admin.businesses.verification.bulk-reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/businesses/documents/{document}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["admin.businesses.documents.url"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/bookings/{booking}/cancel": {
         parameters: {
             query?: never;
@@ -267,7 +395,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["admin.categories.index"];
         put?: never;
         post: operations["admin.categories.store"];
         delete?: never;
@@ -452,6 +580,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/dashboard/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["admin.dashboard.metrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/disputes": {
         parameters: {
             query?: never;
@@ -524,6 +668,150 @@ export interface paths {
             cookie?: never;
         };
         get: operations["freelancer.me.earnings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payouts/failed-transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["admin.payouts.failed-transfers.index"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payouts/failed-transfers/{payment}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["admin.payouts.failed-transfers.retry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/freelancers/verification-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["admin.freelancers.verification-queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/freelancers/{freelancer}/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["admin.freelancers.verification.show"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/freelancers/{freelancer}/verification/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["admin.freelancers.verification.approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/freelancers/{freelancer}/verification/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["admin.freelancers.verification.reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/freelancers/verification/bulk-approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["admin.freelancers.verification.bulk-approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/freelancers/verification/bulk-reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["admin.freelancers.verification.bulk-reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/freelancers/portfolio-items/{portfolioItem}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["admin.freelancers.portfolio-items.url"];
         put?: never;
         post?: never;
         delete?: never;
@@ -690,6 +978,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["notification-preferences.update"];
+        trace?: never;
+    };
+    "/v1/admin/payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["admin.payouts.index"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/admin/platform-settings": {
@@ -1270,6 +1574,18 @@ export interface components {
             lng: number;
             is_default: boolean;
         };
+        /** AdminAnalyticsSnapshotResource */
+        AdminAnalyticsSnapshotResource: {
+            id: string;
+            /** Format: date-time */
+            snapshot_at: string;
+            metrics: unknown[];
+        };
+        /** AssignDisputeRequest */
+        AssignDisputeRequest: {
+            /** Format: uuid */
+            admin_id: string;
+        };
         /** AttachmentResource */
         AttachmentResource: {
             id: string;
@@ -1361,7 +1677,7 @@ export interface components {
             provider: {
                 id: string;
                 legal_name: string;
-                rating_avg: string;
+                rating_avg: number;
             };
             customer: {
                 id: string;
@@ -1390,6 +1706,18 @@ export interface components {
             note: string | null;
             /** Format: date-time */
             created_at: string;
+        };
+        /**
+         * BulkVerificationDecisionRequest
+         * @description Shared shape for the four bulk verification endpoints (business
+         *     approve/reject, freelancer approve/reject) — each controller passes its
+         *     own permission via a route-bound check, so authorization here only
+         *     confirms the caller holds *some* verification-approval permission; the
+         *     per-item Action still enforces the pending-state guard.
+         */
+        BulkVerificationDecisionRequest: {
+            ids: string[];
+            reason?: string | null;
         };
         /** BusinessDocumentResource */
         BusinessDocumentResource: {
@@ -1435,6 +1763,32 @@ export interface components {
             created_at: string | null;
             /** Format: date-time */
             updated_at: string | null;
+        };
+        /** BusinessVerificationResource */
+        BusinessVerificationResource: {
+            id: string;
+            legal_name: string;
+            registration_number: string;
+            verification_status: components["schemas"]["BusinessVerificationStatus"];
+            city: string | null;
+            province: components["schemas"]["CanadianProvince"] | null;
+            owner?: {
+                id: string;
+                name: string;
+                email: string;
+            };
+            documents?: {
+                id: string;
+                document_type: components["schemas"]["BusinessDocumentType"];
+                issuing_authority: string | null;
+                /** Format: date-time */
+                issued_at: string | null;
+                /** Format: date-time */
+                expires_at: string | null;
+                verification_status: components["schemas"]["BusinessVerificationStatus"];
+            }[];
+            /** Format: date-time */
+            created_at: string | null;
         };
         /**
          * BusinessVerificationStatus
@@ -1541,6 +1895,7 @@ export interface components {
             disputable_type: string;
             disputable_id: string;
             raised_by: string;
+            assigned_admin_id: string | null;
             status: string;
             resolution_notes: string | null;
             /** Format: date-time */
@@ -1548,6 +1903,11 @@ export interface components {
             /** Format: date-time */
             updated_at: string | null;
         };
+        /**
+         * FreelancerApprovalStatus
+         * @enum {string}
+         */
+        FreelancerApprovalStatus: "pending" | "approved" | "rejected";
         /** FreelancerDashboardResource */
         FreelancerDashboardResource: {
             open_proposal_count: string;
@@ -1570,6 +1930,28 @@ export interface components {
             currency: string;
             stripe_transfer_id: string | null;
             released: boolean;
+            /** Format: date-time */
+            created_at: string | null;
+        };
+        /** FreelancerVerificationResource */
+        FreelancerVerificationResource: {
+            id: string;
+            headline: string;
+            bio: string;
+            years_experience: number;
+            approval_status: components["schemas"]["FreelancerApprovalStatus"];
+            user?: {
+                id: string;
+                name: string;
+                email: string;
+            };
+            skills?: unknown[];
+            portfolio_items?: {
+                id: string;
+                title: string;
+                description: string | null;
+                project_url: string | null;
+            }[];
             /** Format: date-time */
             created_at: string | null;
         };
@@ -1651,10 +2033,12 @@ export interface components {
         /** PayoutResource */
         PayoutResource: {
             id: string;
+            provider_id: string;
+            provider_name?: string;
             amount: string;
             currency: string;
-            stripe_transfer_id: string | null;
             status: components["schemas"]["PayoutStatus"];
+            stripe_transfer_id: string | null;
             /** Format: date-time */
             created_at: string | null;
         };
@@ -1747,7 +2131,7 @@ export interface components {
                 id: string;
                 user_id: string;
                 headline: string;
-                rating_avg: string;
+                rating_avg: number;
                 name: string | null;
             };
             /** Format: date-time */
@@ -1893,6 +2277,14 @@ export interface components {
             years_experience?: number;
             password_confirmation: string;
         };
+        /** RejectBusinessVerificationRequest */
+        RejectBusinessVerificationRequest: {
+            reason: string;
+        };
+        /** RejectFreelancerVerificationRequest */
+        RejectFreelancerVerificationRequest: {
+            reason: string;
+        };
         /** RejectMilestoneRequest */
         RejectMilestoneRequest: {
             reason: string;
@@ -1989,7 +2381,7 @@ export interface components {
             business: {
                 id: string;
                 legal_name: string;
-                rating_avg: string;
+                rating_avg: number;
                 location: {
                     lat: number;
                     lng: number;
@@ -2038,7 +2430,7 @@ export interface components {
             business: {
                 id: string;
                 legal_name: string;
-                rating_avg: string;
+                rating_avg: number;
             };
             pricing_tiers?: components["schemas"]["ServicePricingTierResource"][];
         };
@@ -2450,6 +2842,38 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["MilestoneResource"];
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "admin.disputes.assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The dispute ID */
+                dispute: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignDisputeRequest"];
+            };
+        };
+        responses: {
+            /** @description `DisputeResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DisputeResource"];
                     };
                 };
             };
@@ -2895,6 +3319,290 @@ export interface operations {
             404: components["responses"]["ModelNotFoundException"];
         };
     };
+    "admin.businesses.verification-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated set of `BusinessVerificationResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: (components["schemas"]["BusinessVerificationResource"] & Record<string, never>)[];
+                        links: {
+                            first: string | null;
+                            last: string | null;
+                            prev: string | null;
+                            next: string | null;
+                        };
+                        meta: {
+                            /** @description Base path for paginator generated URLs. */
+                            path: string | null;
+                            /** @description Number of items shown per page. */
+                            per_page: number;
+                            /** @description The "cursor" that points to the next set of items. */
+                            next_cursor: string | null;
+                            /** @description The "cursor" that points to the previous set of items. */
+                            prev_cursor: string | null;
+                        };
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+        };
+    };
+    "admin.businesses.verification.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The business ID */
+                business: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `BusinessVerificationResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BusinessVerificationResource"] & Record<string, never>;
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "admin.businesses.verification.approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The business ID */
+                business: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `BusinessVerificationResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BusinessVerificationResource"];
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "admin.businesses.verification.reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The business ID */
+                business: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectBusinessVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description `BusinessVerificationResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BusinessVerificationResource"];
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "admin.businesses.verification.bulk-approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkVerificationDecisionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            succeeded: string[];
+                            failed: ({
+                                id: string;
+                                /** @constant */
+                                reason: "not_found";
+                            } | {
+                                id: string;
+                                reason: string;
+                            })[];
+                        };
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "admin.businesses.verification.bulk-reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkVerificationDecisionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            succeeded: string[];
+                            failed: ({
+                                id: string;
+                                /** @constant */
+                                reason: "not_found";
+                            } | {
+                                id: string;
+                                reason: string;
+                            })[];
+                        };
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "admin.businesses.documents.url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document ID */
+                document: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            url: string;
+                            expires_at: string;
+                        };
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
     "bookings.cancel": {
         parameters: {
             query?: never;
@@ -3031,6 +3739,43 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["CategoryResource"][];
+                    };
+                };
+            };
+        };
+    };
+    "admin.categories.index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Array of `CategoryResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CategoryResource"][];
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
                     };
                 };
             };
@@ -3461,6 +4206,43 @@ export interface operations {
             404: components["responses"]["ModelNotFoundException"];
         };
     };
+    "admin.dashboard.metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Array of `AdminAnalyticsSnapshotResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAnalyticsSnapshotResource"][];
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+        };
+    };
     "disputes.index": {
         parameters: {
             query?: never;
@@ -3693,6 +4475,371 @@ export interface operations {
             404: components["responses"]["ModelNotFoundException"];
         };
     };
+    "admin.payouts.failed-transfers.index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated set of `PaymentResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PaymentResource"][];
+                        links: {
+                            first: string | null;
+                            last: string | null;
+                            prev: string | null;
+                            next: string | null;
+                        };
+                        meta: {
+                            /** @description Base path for paginator generated URLs. */
+                            path: string | null;
+                            /** @description Number of items shown per page. */
+                            per_page: number;
+                            /** @description The "cursor" that points to the next set of items. */
+                            next_cursor: string | null;
+                            /** @description The "cursor" that points to the previous set of items. */
+                            prev_cursor: string | null;
+                        };
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+        };
+    };
+    "admin.payouts.failed-transfers.retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The payment ID */
+                payment: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `PaymentResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PaymentResource"];
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "admin.freelancers.verification-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated set of `FreelancerVerificationResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: (components["schemas"]["FreelancerVerificationResource"] & Record<string, never>)[];
+                        links: {
+                            first: string | null;
+                            last: string | null;
+                            prev: string | null;
+                            next: string | null;
+                        };
+                        meta: {
+                            /** @description Base path for paginator generated URLs. */
+                            path: string | null;
+                            /** @description Number of items shown per page. */
+                            per_page: number;
+                            /** @description The "cursor" that points to the next set of items. */
+                            next_cursor: string | null;
+                            /** @description The "cursor" that points to the previous set of items. */
+                            prev_cursor: string | null;
+                        };
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+        };
+    };
+    "admin.freelancers.verification.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The freelancer ID */
+                freelancer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `FreelancerVerificationResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["FreelancerVerificationResource"] & Record<string, never>;
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "admin.freelancers.verification.approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The freelancer ID */
+                freelancer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `FreelancerVerificationResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["FreelancerVerificationResource"];
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "admin.freelancers.verification.reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The freelancer ID */
+                freelancer: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectFreelancerVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description `FreelancerVerificationResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["FreelancerVerificationResource"];
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "admin.freelancers.verification.bulk-approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkVerificationDecisionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            succeeded: string[];
+                            failed: ({
+                                id: string;
+                                /** @constant */
+                                reason: "not_found";
+                            } | {
+                                id: string;
+                                reason: string;
+                            })[];
+                        };
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "admin.freelancers.verification.bulk-reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkVerificationDecisionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            succeeded: string[];
+                            failed: ({
+                                id: string;
+                                /** @constant */
+                                reason: "not_found";
+                            } | {
+                                id: string;
+                                reason: string;
+                            })[];
+                        };
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "admin.freelancers.portfolio-items.url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The portfolio item ID */
+                portfolioItem: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            url: string;
+                            expires_at: string;
+                        };
+                    };
+                };
+            };
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
     "proposals.hire": {
         parameters: {
             query?: never;
@@ -3916,22 +5063,9 @@ export interface operations {
                     "application/json": components["schemas"]["NotificationResource"];
                 };
             };
-            /** @description An error */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description Error overview.
-                         * @example
-                         */
-                        message: string;
-                    };
-                };
-            };
+            403: components["responses"]["AuthorizationException"];
             404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
         };
     };
     "notifications.read-all": {
@@ -3999,6 +5133,51 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["NotificationPreferenceResource"][];
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "admin.payouts.index": {
+        parameters: {
+            query?: {
+                status?: string;
+                provider_id?: string;
+                date_from?: string;
+                date_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated set of `PayoutResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PayoutResource"][];
+                        links: {
+                            first: string | null;
+                            last: string | null;
+                            prev: string | null;
+                            next: string | null;
+                        };
+                        meta: {
+                            /** @description Base path for paginator generated URLs. */
+                            path: string | null;
+                            /** @description Number of items shown per page. */
+                            per_page: number;
+                            /** @description The "cursor" that points to the next set of items. */
+                            next_cursor: string | null;
+                            /** @description The "cursor" that points to the previous set of items. */
+                            prev_cursor: string | null;
+                        };
                     };
                 };
             };

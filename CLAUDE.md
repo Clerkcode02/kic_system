@@ -378,5 +378,29 @@ See `docs/PROJECT_SETUP.md` for the full env var list and third-party account ch
 - Run `composer pint`, `composer larastan`, `php artisan test`, and `npm run typecheck`
   before declaring a task done.
 
-  ## 12. Maintaining this file
+### Pest test-isolation gotchas (backend)
+
+- **Global helper functions belong in `tests/Pest.php`, never in a single test file.**
+  A `function foo(): ... {}` declared at the top of one test file is only visible to
+  another file once PHP has loaded the first one — true by accident under serial
+  execution (alphabetical-ish load order) and false under `--parallel` (separate worker
+  processes). If a fixture helper (`authHeader()`, `bookingCustomer()`, etc.) is used
+  from more than one test file, it must live in `tests/Pest.php`.
+- **The `array` cache driver (`CACHE_STORE=array` in `phpunit.xml`) lives for the whole
+  PHP process, not per test.** Unlike Redis in every real environment, a value cached by
+  one test (e.g. `CategoryTreeCache::remember()`) survives `RefreshDatabase` and leaks
+  into a later test. `tests/TestCase::setUp()` calls `Cache::flush()` for this reason —
+  don't remove it.
+- **`ConcurrentBookingTest` and `ConcurrentHireTest` fork real child processes and
+  commit real rows outside `RefreshDatabase`** (a transaction-wrapped test can't see
+  another connection's writes, which is the whole point of those tests). They clean up
+  what they can, but `ConcurrentBookingTest`'s winning booking can never be deleted —
+  `booking_status_history` is append-only by DB trigger, and that FK chain blocks it.
+  Any new test that asserts an exact global count/position (e.g. "the categories table
+  has 0 rows", "the first item in the list is X") is asserting something that can be
+  true or false purely depending on suite run order. Assert against a **baseline**
+  captured with the same query the endpoint/job itself uses instead (see
+  `AdminCategoryTreeTest` and `GenerateAdminAnalyticsSnapshotJobTest` for the pattern).
+
+## 12. Maintaining this file
    - If you discover an important project convention, gotcha, or repeated correction during a session, propose adding it to CLAUDE.md before the session ends.

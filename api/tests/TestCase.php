@@ -7,6 +7,7 @@ namespace Tests;
 use App\Domain\Payment\Services\PaymentGateway;
 use App\Domain\Payment\Services\StubPaymentGateway;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Cache;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -20,5 +21,12 @@ abstract class TestCase extends BaseTestCase
         // specifically exercise Stripe Connect rebind PaymentGateway (or
         // StripeClient) themselves.
         $this->app->bind(PaymentGateway::class, StubPaymentGateway::class);
+
+        // The `array` cache driver (phpunit.xml's CACHE_STORE=array) lives
+        // for the whole PHP process, not per-test — unlike Redis in every
+        // real environment. Without this, a value an earlier test cached
+        // (e.g. CategoryTreeCache::remember()) survives RefreshDatabase and
+        // leaks stale data into a later test that expects a clean DB.
+        Cache::flush();
     }
 }

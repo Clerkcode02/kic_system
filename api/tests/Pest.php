@@ -67,6 +67,61 @@ function forgetAuthGuards(): void
  *
  * @return array{endpoint: string, payload: array<string, mixed>}
  */
+function authHeader(\App\Domain\User\Models\User $user): array
+{
+    return ['Authorization' => 'Bearer '.$user->createToken('test')->plainTextToken];
+}
+
+/**
+ * @return array{0: \App\Domain\User\Models\User, 1: \App\Domain\User\Models\Address}
+ */
+function bookingCustomer(): array
+{
+    $user = \App\Domain\User\Models\User::factory()->customer()->create();
+    $user->assignRole(\App\Domain\User\Enums\RoleName::Customer->value);
+    $address = \App\Domain\User\Models\Address::factory()->for($user, 'user')->create();
+
+    return [$user, $address];
+}
+
+/**
+ * @return array{0: \App\Domain\User\Models\User, 1: \App\Domain\Business\Models\Business}
+ */
+function bookingProvider(int $maxBookingsPerDay = 10): array
+{
+    $user = \App\Domain\User\Models\User::factory()->provider()->create();
+    $user->assignRole(\App\Domain\User\Enums\RoleName::ProviderOwner->value);
+    $business = \App\Domain\Business\Models\Business::factory()->verified()->payoutsEnabled()->create([
+        'user_id' => $user->id,
+        'max_bookings_per_day' => $maxBookingsPerDay,
+    ]);
+
+    foreach (range(0, 6) as $day) {
+        \App\Domain\Business\Models\ProviderAvailability::factory()->create([
+            'business_id' => $business->id,
+            'day_of_week' => $day,
+            'start_time' => '08:00:00',
+            'end_time' => '18:00:00',
+        ]);
+    }
+
+    return [$user, $business];
+}
+
+function bookingService(\App\Domain\Business\Models\Business $business, \App\Domain\Catalog\Enums\ServicePricingType $pricingType = \App\Domain\Catalog\Enums\ServicePricingType::Fixed): \App\Domain\Catalog\Models\Service
+{
+    return \App\Domain\Catalog\Models\Service::factory()->create([
+        'business_id' => $business->id,
+        'pricing_type' => $pricingType,
+        'is_active' => true,
+    ]);
+}
+
+function futureBookingDate(): string
+{
+    return now()->addDays(5)->toDateString();
+}
+
 function registrationRequestFor(string $role): array
 {
     $base = [

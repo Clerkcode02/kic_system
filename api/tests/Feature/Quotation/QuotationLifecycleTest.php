@@ -5,10 +5,12 @@ declare(strict_types=1);
 use App\Domain\Booking\Actions\TransitionBookingStatus;
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Booking\Models\Booking;
+use App\Domain\Business\Models\Business;
 use App\Domain\Catalog\Enums\ServicePricingType;
 use App\Domain\Payment\Models\Payment;
 use App\Domain\Quotation\Jobs\ExpireStaleQuotationsJob;
 use App\Domain\Quotation\Models\Quotation;
+use App\Domain\User\Enums\RoleName;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -174,6 +176,90 @@ it('walks send -> reject -> revise, incrementing revision_number and superseding
 
     $revisedId = $revised->json('data.id');
     expect($revisedId)->not->toBe($original->id);
+});
+
+it('blocks sending a quotation when the provider cannot receive funds yet', function () {
+    [$customer, $address] = bookingCustomer();
+    $providerUser = \App\Domain\User\Models\User::factory()->provider()->create();
+    $providerUser->assignRole(RoleName::ProviderOwner->value);
+    // Verified but Stripe Connect onboarding incomplete — no payoutsEnabled().
+    $business = Business::factory()->verified()->create(['user_id' => $providerUser->id]);
+    $service = bookingService($business, ServicePricingType::Hourly);
+
+    $booking = Booking::factory()->waitingForQuotation()->create([
+        'customer_id' => $customer->id,
+        'provider_id' => $business->id,
+        'service_id' => $service->id,
+        'address_id' => $address->id,
+    ]);
+
+    $this->withHeaders(authHeader($providerUser))
+        ->postJson("/api/v1/bookings/{$booking->id}/quotations", [
+            'labor_cost' => '100.00',
+            'materials_cost' => '0',
+            'additional_fees' => '0',
+        ])
+        ->assertStatus(403)
+        ->assertJsonPath('code', 'provider_payouts_not_enabled');
+
+    expect(Quotation::query()->count())->toBe(0);
+});
+
+it('blocks revising a quotation when the provider cannot receive funds yet', function () {
+    [$providerUser, $business, $booking] = quotableBooking();
+
+    $original = Quotation::factory()->sent()->create(['booking_id' => $booking->id]);
+    $booking->update(['status' => BookingStatus::WaitingForCustomer]);
+
+    // Payouts disabled after the quotation was sent (e.g. Stripe requirements
+    // regressed) — revising must be blocked the same way sending is.
+    $business->update(['stripe_payouts_enabled' => false]);
+
+    $this->withHeaders(authHeader($providerUser))
+        ->postJson("/api/v1/quotations/{$original->id}/revise", [
+            'labor_cost' => '80.00',
+            'materials_cost' => '0',
+            'additional_fees' => '0',
+        ])
+        ->assertStatus(403)
+        ->assertJsonPath('code', 'provider_payouts_not_enabled');
+
+    expect($original->fresh()->status)->toBe(\App\Domain\Quotation\Enums\QuotationStatus::Sent);
+});
+
+it('returns 409 when revising a quotation that is not in a revisable state', function () {
+    [$providerUser, , $booking] = quotableBooking();
+
+    $accepted = Quotation::factory()->accepted()->create(['booking_id' => $booking->id]);
+
+    $this->withHeaders(authHeader($providerUser))
+        ->postJson("/api/v1/quotations/{$accepted->id}/revise", [
+            'labor_cost' => '80.00',
+            'materials_cost' => '0',
+            'additional_fees' => '0',
+        ])
+        ->assertStatus(409)
+        ->assertJsonPath('error', 'illegal_state_transition');
+});
+
+it('revises a still-sent quotation (customer has not yet decided), hopping the booking back through WaitingForQuotation', function () {
+    [$providerUser, , $booking] = quotableBooking();
+
+    $original = Quotation::factory()->sent()->create(['booking_id' => $booking->id]);
+    $booking->update(['status' => BookingStatus::WaitingForCustomer]);
+
+    $this->withHeaders(authHeader($providerUser))
+        ->postJson("/api/v1/quotations/{$original->id}/revise", [
+            'labor_cost' => '80.00',
+            'materials_cost' => '0',
+            'additional_fees' => '0',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.revision_number', $original->revision_number + 1)
+        ->assertJsonPath('data.status', 'sent');
+
+    expect($original->fresh()->status)->toBe(\App\Domain\Quotation\Enums\QuotationStatus::Superseded);
+    expect($booking->fresh()->status)->toBe(BookingStatus::WaitingForCustomer);
 });
 
 it('rejects an unauthenticated request to every quotation endpoint', function () {
