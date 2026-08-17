@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent } from 'react'
 import toast from 'react-hot-toast'
 import { Badge, Button, Skeleton } from '@/components'
 import { ApiError } from '@/lib/api'
+import { MilestoneEscrowPanel } from '@/features/payments'
 import { useDeliverableUpload } from '../hooks/useDeliverableUpload'
 import { useMilestoneDeliverables, useSubmitMilestone } from '../hooks/useContracts'
 import { SUBMITTABLE_STATUSES, type Milestone } from '../types'
@@ -123,6 +124,8 @@ export function MilestonePanel({ milestone, contractId }: MilestonePanelProps) {
           </Button>
         </div>
       )}
+
+      <MilestoneEscrowPanel milestone={milestone} contractId={contractId} />
     </div>
   )
 }

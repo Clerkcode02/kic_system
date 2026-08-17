@@ -50,6 +50,7 @@ enum PermissionName: string
     case DisputesCreate = 'disputes.create';
     case DisputesView = 'disputes.view';
     case DisputesResolve = 'disputes.resolve';
+    case DisputesAssign = 'disputes.assign';
 
     case AuditLogsView = 'audit-logs.view';
     case AuditLogsViewOwn = 'audit-logs.view-own';
@@ -59,8 +60,14 @@ enum PermissionName: string
     case PaymentsRefund = 'payments.refund';
     case PaymentsRefundLarge = 'payments.refund-large';
 
+    case PayoutsView = 'payouts.view';
+    case PayoutsRetry = 'payouts.retry';
+
     case CategoriesManage = 'categories.manage';
     case PlatformSettingsManage = 'platform-settings.manage';
+
+    case VerificationView = 'verification.view';
+    case AnalyticsView = 'analytics.view';
 
     case AdminsManage = 'admins.manage';
 }

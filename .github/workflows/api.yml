@@ -61,6 +61,7 @@ jobs:
           DB_DATABASE: marketplace_testing
           DB_USERNAME: marketplace
           DB_PASSWORD: marketplace
+          CACHE_STORE: array
         run: php artisan migrate --force
 
       # CLAUDE.md §11: "Run composer pint, composer larastan, php artisan

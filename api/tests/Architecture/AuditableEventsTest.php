@@ -45,11 +45,13 @@ it('implements Auditable on every event representing a critical, auditable actio
         \App\Domain\Payment\Events\PaymentSucceeded::class,
         \App\Domain\Payment\Events\PayoutCompleted::class,
         \App\Domain\Payment\Events\RefundProcessed::class,
+        \App\Domain\Payment\Events\PaymentTransferRetried::class,
         // Reviews
         \App\Domain\Review\Events\ReviewReceived::class,
         // Disputes (admin resolution authority)
         \App\Domain\Dispute\Events\DisputeRaised::class,
         \App\Domain\Dispute\Events\DisputeResolved::class,
+        \App\Domain\Dispute\Events\DisputeAssigned::class,
     ];
 
     foreach ($criticalEvents as $eventClass) {

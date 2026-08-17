@@ -4,6 +4,9 @@ import { Badge, Button, Card } from '@/components'
 import { ApiError } from '@/lib/api'
 import type { Quotation } from '@/features/booking/types'
 import { useIdempotencyKey } from '@/features/booking/hooks/useIdempotencyKey'
+import { PaymentCheckoutModal } from '@/features/payments/components/PaymentCheckoutModal'
+import { useBookingPaymentConfirmation } from '@/features/payments/hooks/useBookingPaymentConfirmation'
+import type { AcceptQuotationPayment } from '../api/quotationApi'
 import { useAcceptQuotation, useRejectQuotation } from '../hooks/useQuotationActions'
 import { QuotationLineItems } from './QuotationLineItems'
 
@@ -32,19 +35,28 @@ const STATUS_TONE: Record<
 export function QuotationPanel({ bookingId, quotations }: QuotationPanelProps) {
   const [isRejecting, setIsRejecting] = useState(false)
   const [reason, setReason] = useState('')
+  const [checkoutPayment, setCheckoutPayment] = useState<AcceptQuotationPayment | null>(null)
   const { key: idempotencyKey } = useIdempotencyKey()
   const { mutateAsync: accept, isPending: isAccepting } = useAcceptQuotation(bookingId)
   const { mutateAsync: reject, isPending: isRejectingRequest } = useRejectQuotation(bookingId)
+  const isConfirmed = useBookingPaymentConfirmation(bookingId, checkoutPayment !== null)
 
   if (quotations.length === 0) return null
 
   const active = quotations.find((q) => q.status === 'sent') ?? quotations[0]
   const history = quotations.filter((q) => q.id !== active.id)
 
+  const isDeposit = checkoutPayment !== null && Number(checkoutPayment.amount) < Number(active.total_amount)
+  const remaining = checkoutPayment ? (Number(active.total_amount) - Number(checkoutPayment.amount)).toFixed(2) : null
+
   const handleAccept = async () => {
     try {
-      await accept({ quotationId: active.id, idempotencyKey })
-      toast.success('Quotation accepted. Proceed to payment to confirm your booking.')
+      const { payment } = await accept({ quotationId: active.id, idempotencyKey })
+      if (payment.client_secret) {
+        setCheckoutPayment(payment)
+      } else {
+        toast.success('Quotation accepted.')
+      }
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : 'Could not accept this quotation.')
     }
@@ -144,6 +156,21 @@ export function QuotationPanel({ bookingId, quotations }: QuotationPanelProps) {
             ))}
           </div>
         </details>
+      )}
+
+      {checkoutPayment && (
+        <PaymentCheckoutModal
+          isOpen
+          onClose={() => setCheckoutPayment(null)}
+          title="Confirm your booking"
+          payableType="booking"
+          payableId={bookingId}
+          paymentId={checkoutPayment.id}
+          clientSecret={checkoutPayment.client_secret as string}
+          amount={checkoutPayment.amount}
+          depositInfo={isDeposit ? { totalAmount: active.total_amount, remainingAmount: remaining as string } : undefined}
+          isConfirmed={isConfirmed}
+        />
       )}
     </Card>
   )

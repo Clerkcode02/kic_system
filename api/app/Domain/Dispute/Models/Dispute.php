@@ -26,6 +26,7 @@ class Dispute extends Model
         'disputable_type',
         'disputable_id',
         'raised_by',
+        'assigned_admin_id',
         'status',
         'resolution_notes',
     ];
@@ -54,5 +55,13 @@ class Dispute extends Model
     public function raisedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'raised_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function assignedAdmin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_admin_id');
     }
 }

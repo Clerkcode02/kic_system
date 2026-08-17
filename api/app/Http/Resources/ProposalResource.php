@@ -30,7 +30,7 @@ class ProposalResource extends JsonResource
                 'id' => $this->freelancer->id,
                 'user_id' => $this->freelancer->user_id,
                 'headline' => $this->freelancer->headline,
-                'rating_avg' => $this->freelancer->rating_avg,
+                'rating_avg' => (float) $this->freelancer->rating_avg,
                 'name' => $this->freelancer->relationLoaded('user') ? $this->freelancer->user->name : null,
             ],
             'created_at' => $this->created_at,

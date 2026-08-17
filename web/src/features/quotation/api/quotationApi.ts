@@ -43,16 +43,36 @@ export async function reviseQuotation(
   return data.data
 }
 
+export interface AcceptQuotationPayment {
+  id: string
+  stripe_payment_intent_id: string
+  client_secret: string | null
+  amount: string
+  status: string
+}
+
+export interface AcceptQuotationResult {
+  quotation: Quotation
+  payment: AcceptQuotationPayment
+}
+
+/**
+ * AcceptQuotationController (CLAUDE.md §5 "Quotation") creates the booking's
+ * payment intent inline with acceptance — the response carries both the
+ * updated quotation and the client_secret needed to open checkout, so the
+ * frontend never has to make a second round trip before showing the
+ * Payment Element.
+ */
 export async function acceptQuotation(
   quotationId: string,
   idempotencyKey: string,
-): Promise<Quotation> {
-  const { data } = await apiClient.post<{ data: Quotation }>(
+): Promise<AcceptQuotationResult> {
+  const { data } = await apiClient.post<{ data: Quotation; meta: { payment: AcceptQuotationPayment } }>(
     `/quotations/${quotationId}/accept`,
     {},
     { headers: { 'Idempotency-Key': idempotencyKey } },
   )
-  return data.data
+  return { quotation: data.data, payment: data.meta.payment }
 }
 
 export async function rejectQuotation(quotationId: string, reason?: string): Promise<Quotation> {

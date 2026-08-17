@@ -38,7 +38,7 @@ class BookingResource extends JsonResource
             'provider' => [
                 'id' => $this->provider->id,
                 'legal_name' => $this->provider->legal_name,
-                'rating_avg' => $this->provider->rating_avg,
+                'rating_avg' => (float) $this->provider->rating_avg,
             ],
             'customer' => [
                 'id' => $this->customer->id,

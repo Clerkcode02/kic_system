@@ -23,6 +23,7 @@ class DisputeResource extends JsonResource
             'disputable_type' => $this->disputable_type,
             'disputable_id' => $this->disputable_id,
             'raised_by' => $this->raised_by,
+            'assigned_admin_id' => $this->assigned_admin_id,
             'status' => $this->status->value,
             'resolution_notes' => $this->resolution_notes,
             'created_at' => $this->created_at,

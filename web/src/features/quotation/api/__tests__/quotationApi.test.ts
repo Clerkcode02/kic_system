@@ -51,16 +51,23 @@ describe('reviseQuotation', () => {
 })
 
 describe('acceptQuotation', () => {
-  it('sends the Idempotency-Key header', async () => {
-    apiClientMock.post.mockResolvedValue({ data: { data: { id: 'q1' } } })
+  it('sends the Idempotency-Key header and returns the payment from meta', async () => {
+    apiClientMock.post.mockResolvedValue({
+      data: {
+        data: { id: 'q1' },
+        meta: { payment: { id: 'pay1', client_secret: 'secret_abc', amount: '100.00' } },
+      },
+    })
 
-    await acceptQuotation('q1', 'key-abc')
+    const result = await acceptQuotation('q1', 'key-abc')
 
     expect(apiClientMock.post).toHaveBeenCalledWith(
       '/quotations/q1/accept',
       {},
       { headers: { 'Idempotency-Key': 'key-abc' } },
     )
+    expect(result.quotation).toEqual({ id: 'q1' })
+    expect(result.payment).toEqual({ id: 'pay1', client_secret: 'secret_abc', amount: '100.00' })
   })
 })
 

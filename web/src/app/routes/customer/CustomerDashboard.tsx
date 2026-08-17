@@ -2,6 +2,7 @@ import { NavLink, Route, Routes } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 import { CatalogBrowsePage, ServiceDetailView } from '@/features/catalog'
 import { BookingWizard, BookingListPage, BookingDetailPage } from '@/features/booking'
+import { ContractDetailPage } from '@/features/freelance/contract'
 
 const NAV_LINKS = [
   { to: '/customer/services', label: 'Browse services' },
@@ -42,6 +43,10 @@ export function CustomerDashboard() {
         <Route path="book/:serviceId" element={<BookingWizard />} />
         <Route path="bookings" element={<BookingListPage />} />
         <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
+        {/* No customer-facing project/contract list exists yet (CLAUDE.md §11 — no such
+            endpoint to build a list from); this detail route exists so a contract link
+            from elsewhere (e.g. a future project page) resolves for the client role. */}
+        <Route path="contracts/:contractId" element={<ContractDetailPage />} />
       </Routes>
     </div>
   )

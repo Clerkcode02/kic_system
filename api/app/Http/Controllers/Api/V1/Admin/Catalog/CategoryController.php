@@ -9,6 +9,8 @@ use App\Domain\Catalog\Actions\DeleteCategory;
 use App\Domain\Catalog\Actions\ReorderCategories;
 use App\Domain\Catalog\Actions\UpdateCategory;
 use App\Domain\Catalog\Models\Category;
+use App\Domain\Catalog\Queries\AdminCategoryTreeQuery;
+use App\Domain\User\Enums\PermissionName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Catalog\DestroyCategoryRequest;
 use App\Http\Requests\Admin\Catalog\ReorderCategoriesRequest;
@@ -16,10 +18,19 @@ use App\Http\Requests\Admin\Catalog\StoreCategoryRequest;
 use App\Http\Requests\Admin\Catalog\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
 class CategoryController extends Controller
 {
+    public function index(Request $request, AdminCategoryTreeQuery $query): AnonymousResourceCollection
+    {
+        abort_unless($request->user()?->can(PermissionName::CategoriesManage->value), 403);
+
+        return CategoryResource::collection($query->handle());
+    }
+
     public function store(StoreCategoryRequest $request, CreateCategory $action): CategoryResource
     {
         return new CategoryResource($action->handle($request->validated()));

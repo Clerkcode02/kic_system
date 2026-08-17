@@ -19,10 +19,12 @@ class PayoutResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'provider_id' => $this->provider_id,
+            'provider_name' => $this->whenLoaded('provider', fn () => $this->provider->legal_name),
             'amount' => $this->amount->toDecimal(),
             'currency' => $this->currency,
-            'stripe_transfer_id' => $this->stripe_transfer_id,
             'status' => $this->status,
+            'stripe_transfer_id' => $this->stripe_transfer_id,
             'created_at' => $this->created_at,
         ];
     }

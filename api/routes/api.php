@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 use App\Domain\Payment\Webhooks\StripeWebhookController;
 use App\Http\Controllers\Api\V1\Admin\Catalog\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\V1\Admin\Dispute\AssignDisputeController;
+use App\Http\Controllers\Api\V1\Admin\Payment\FailedTransferController;
+use App\Http\Controllers\Api\V1\Admin\Payment\PayoutController;
 use App\Http\Controllers\Api\V1\Admin\Payment\RefundPaymentController;
 use App\Http\Controllers\Api\V1\Admin\Platform\PlatformSettingController;
+use App\Http\Controllers\Api\V1\Admin\Reporting\DashboardMetricsController;
+use App\Http\Controllers\Api\V1\Admin\Verification\BusinessVerificationController;
+use App\Http\Controllers\Api\V1\Admin\Verification\FreelancerVerificationController;
 use App\Http\Controllers\Api\V1\Customer\Booking\ConfirmBookingCompletionController;
 use App\Http\Controllers\Api\V1\Customer\Booking\StoreBookingController;
 use App\Http\Controllers\Api\V1\Customer\Project\CancelProjectController;
@@ -211,6 +217,7 @@ Route::prefix('v1/attachments')->name('attachments.')->middleware('api.protected
 Route::post('v1/webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
 
 Route::prefix('v1/admin')->name('admin.')->middleware(['api.protected', 'role:admin,super_admin'])->group(function () {
+    Route::get('categories', [AdminCategoryController::class, 'index'])->name('categories.index');
     Route::post('categories', [AdminCategoryController::class, 'store'])->name('categories.store');
     Route::patch('categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update');
     Route::delete('categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
@@ -220,6 +227,30 @@ Route::prefix('v1/admin')->name('admin.')->middleware(['api.protected', 'role:ad
 
     Route::get('platform-settings', [PlatformSettingController::class, 'index'])->name('platform-settings.index');
     Route::patch('platform-settings/{key}', [PlatformSettingController::class, 'update'])->name('platform-settings.update');
+
+    Route::post('disputes/{dispute}/assign', AssignDisputeController::class)->name('disputes.assign');
+
+    Route::get('payouts', [PayoutController::class, 'index'])->name('payouts.index');
+    Route::get('payouts/failed-transfers', [FailedTransferController::class, 'index'])->name('payouts.failed-transfers.index');
+    Route::post('payouts/failed-transfers/{payment}/retry', [FailedTransferController::class, 'retry'])->name('payouts.failed-transfers.retry');
+
+    Route::get('businesses/verification-queue', [BusinessVerificationController::class, 'index'])->name('businesses.verification-queue');
+    Route::get('businesses/{business}/verification', [BusinessVerificationController::class, 'show'])->name('businesses.verification.show');
+    Route::post('businesses/{business}/verification/approve', [BusinessVerificationController::class, 'approve'])->name('businesses.verification.approve');
+    Route::post('businesses/{business}/verification/reject', [BusinessVerificationController::class, 'reject'])->name('businesses.verification.reject');
+    Route::post('businesses/verification/bulk-approve', [BusinessVerificationController::class, 'bulkApprove'])->name('businesses.verification.bulk-approve');
+    Route::post('businesses/verification/bulk-reject', [BusinessVerificationController::class, 'bulkReject'])->name('businesses.verification.bulk-reject');
+    Route::get('businesses/documents/{document}/url', [BusinessVerificationController::class, 'documentUrl'])->name('businesses.documents.url');
+
+    Route::get('freelancers/verification-queue', [FreelancerVerificationController::class, 'index'])->name('freelancers.verification-queue');
+    Route::get('freelancers/{freelancer}/verification', [FreelancerVerificationController::class, 'show'])->name('freelancers.verification.show');
+    Route::post('freelancers/{freelancer}/verification/approve', [FreelancerVerificationController::class, 'approve'])->name('freelancers.verification.approve');
+    Route::post('freelancers/{freelancer}/verification/reject', [FreelancerVerificationController::class, 'reject'])->name('freelancers.verification.reject');
+    Route::post('freelancers/verification/bulk-approve', [FreelancerVerificationController::class, 'bulkApprove'])->name('freelancers.verification.bulk-approve');
+    Route::post('freelancers/verification/bulk-reject', [FreelancerVerificationController::class, 'bulkReject'])->name('freelancers.verification.bulk-reject');
+    Route::get('freelancers/portfolio-items/{portfolioItem}/url', [FreelancerVerificationController::class, 'portfolioItemUrl'])->name('freelancers.portfolio-items.url');
+
+    Route::get('dashboard/metrics', [DashboardMetricsController::class, 'index'])->name('dashboard.metrics');
 });
 
 Route::prefix('v1/provider')->name('provider.')->middleware(['api.protected', 'role:provider_owner,provider_staff'])->group(function () {

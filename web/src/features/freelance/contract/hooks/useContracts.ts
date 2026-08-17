@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  approveMilestone,
   fetchContract,
   fetchMilestoneDeliverables,
   fetchMyContracts,
@@ -33,6 +34,19 @@ export function useMilestoneDeliverables(milestoneId: string) {
   return useQuery({
     queryKey: milestoneDeliverablesQueryKey(milestoneId),
     queryFn: () => fetchMilestoneDeliverables(milestoneId),
+  })
+}
+
+export function useApproveMilestone(contractId: string | undefined) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (milestoneId: string) => approveMilestone(milestoneId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CONTRACTS_QUERY_KEY })
+      if (contractId) {
+        queryClient.invalidateQueries({ queryKey: ['freelance', 'contract', contractId] })
+      }
+    },
   })
 }
 

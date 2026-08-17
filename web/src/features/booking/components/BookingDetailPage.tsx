@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button, Card, EmptyState, Skeleton } from '@/components'
 import { QuotationPanel } from '@/features/quotation'
+import { BookingPaymentPanel } from '@/features/payments'
 import { useBooking } from '../hooks/useBookings'
 import { AttachmentList } from './AttachmentList'
 import { BookingStatusBadge } from './BookingStatusBadge'
@@ -98,6 +99,8 @@ export function BookingDetailPage() {
       {booking.quotations.length > 0 && (
         <QuotationPanel bookingId={booking.id} quotations={booking.quotations} />
       )}
+
+      <BookingPaymentPanel booking={booking} />
 
       <Card className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-gray-900">Status history</h2>

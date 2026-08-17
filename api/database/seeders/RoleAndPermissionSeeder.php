@@ -127,11 +127,16 @@ class RoleAndPermissionSeeder extends Seeder
             PermissionName::FreelancersApprove,
             PermissionName::DisputesView,
             PermissionName::DisputesResolve,
+            PermissionName::DisputesAssign,
             PermissionName::PaymentsView,
             PermissionName::PaymentsRefund,
+            PermissionName::PayoutsView,
+            PermissionName::PayoutsRetry,
             PermissionName::AuditLogsView,
             PermissionName::CategoriesManage,
             PermissionName::PlatformSettingsManage,
+            PermissionName::VerificationView,
+            PermissionName::AnalyticsView,
         ],
     ];
 

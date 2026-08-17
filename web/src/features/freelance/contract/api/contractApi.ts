@@ -60,6 +60,17 @@ export async function submitMilestone(
   return data.data
 }
 
+/**
+ * Only flips the milestone to 'approved' and enqueues escrow release
+ * (App\Domain\Freelance\Actions\ApproveMilestone) — the actual Stripe
+ * Transfer happens async on the payments queue, and fails loudly with a
+ * `milestone_not_funded` 409 if escrow wasn't funded first.
+ */
+export async function approveMilestone(milestoneId: string): Promise<Milestone> {
+  const { data } = await apiClient.post<{ data: Milestone }>(`/milestones/${milestoneId}/approve`)
+  return data.data
+}
+
 export async function uploadFileToS3(
   uploadUrl: DeliverableUploadUrl,
   file: File,

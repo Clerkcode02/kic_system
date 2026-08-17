@@ -35,7 +35,7 @@ class ServiceResource extends JsonResource
             'business' => [
                 'id' => $this->business->id,
                 'legal_name' => $this->business->legal_name,
-                'rating_avg' => $this->business->rating_avg,
+                'rating_avg' => (float) $this->business->rating_avg,
             ],
             'pricing_tiers' => ServicePricingTierResource::collection($this->whenLoaded('pricingTiers')),
         ];

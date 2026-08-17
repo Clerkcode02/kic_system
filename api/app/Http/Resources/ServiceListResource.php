@@ -33,7 +33,7 @@ class ServiceListResource extends JsonResource
             'business' => [
                 'id' => $this->business->id,
                 'legal_name' => $this->business->legal_name,
-                'rating_avg' => $this->business->rating_avg,
+                'rating_avg' => (float) $this->business->rating_avg,
                 'location' => $this->business->lat !== null && $this->business->lng !== null
                     ? ['lat' => (float) $this->business->lat, 'lng' => (float) $this->business->lng]
                     : null,

@@ -7,6 +7,7 @@ use App\Domain\Booking\Jobs\NudgeUnquotedProviderJob;
 use App\Domain\Payment\Jobs\RunProviderPayoutJob;
 use App\Domain\Quotation\Jobs\ExpireStaleQuotationsJob;
 use App\Domain\Quotation\Jobs\SendQuotationExpiryReminderJob;
+use App\Domain\Reporting\Jobs\GenerateAdminAnalyticsSnapshotJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -28,3 +29,7 @@ Schedule::job(new NudgeUnquotedProviderJob())->dailyAt('09:00')->withoutOverlapp
 
 // CLAUDE.md §8 — nightly provider payout ledger sweep.
 Schedule::job(new RunProviderPayoutJob())->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+
+// SRS §12 — admin analytics dashboard reads from this hourly snapshot,
+// never live aggregation.
+Schedule::job(new GenerateAdminAnalyticsSnapshotJob())->hourly()->withoutOverlapping()->onOneServer();

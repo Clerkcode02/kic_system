@@ -37,6 +37,7 @@ export function useReviseQuotation(bookingId: string) {
   })
 }
 
+/** Returns {quotation, payment} — see acceptQuotation for why payment is included. */
 export function useAcceptQuotation(bookingId: string) {
   const queryClient = useQueryClient()
   return useMutation({

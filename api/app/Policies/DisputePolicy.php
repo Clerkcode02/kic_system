@@ -42,6 +42,11 @@ class DisputePolicy
         return $user->can(PermissionName::DisputesResolve->value);
     }
 
+    public function assign(User $user, Dispute $dispute): bool
+    {
+        return $user->can(PermissionName::DisputesAssign->value);
+    }
+
     /**
      * Gates the evidence-attachment lifecycle (presign/confirm/download-url)
      * for this dispute — same audience as {@see view}: the party who raised
