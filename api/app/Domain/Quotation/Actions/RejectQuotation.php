@@ -9,8 +9,8 @@ use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Quotation\Events\QuotationRejected;
 use App\Domain\Quotation\Models\Quotation;
 use App\Domain\Quotation\StateMachines\QuotationStateMachine;
-use App\Domain\User\Models\User;
 use App\Support\Action;
+use App\Support\ValueObjects\BookingActor;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -25,7 +25,7 @@ final class RejectQuotation implements Action
     {
     }
 
-    public function handle(Quotation $quotation, User $actor, ?string $reason = null): Quotation
+    public function handle(Quotation $quotation, BookingActor $actor, ?string $reason = null): Quotation
     {
         return DB::transaction(function () use ($quotation, $actor, $reason) {
             $machine = new QuotationStateMachine($quotation->status);

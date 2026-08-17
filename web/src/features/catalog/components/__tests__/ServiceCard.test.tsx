@@ -42,6 +42,6 @@ describe('ServiceCard', () => {
   it('links to the service detail route', () => {
     renderCard(baseService)
 
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/customer/services/svc1')
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/services/svc1')
   })
 })

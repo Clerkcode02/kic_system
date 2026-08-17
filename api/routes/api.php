@@ -27,6 +27,10 @@ use App\Http\Controllers\Api\V1\Freelancer\Payment\EarningsController as Freelan
 use App\Http\Controllers\Api\V1\Freelancer\Proposal\ListMyProposalsController;
 use App\Http\Controllers\Api\V1\Freelancer\Proposal\StoreProposalController;
 use App\Http\Controllers\Api\V1\Freelancer\Proposal\WithdrawProposalController;
+use App\Http\Controllers\Api\V1\Guest\GuestBookingController;
+use App\Http\Controllers\Api\V1\Guest\GuestBookingLookupController;
+use App\Http\Controllers\Api\V1\Guest\GuestPaymentIntentController;
+use App\Http\Controllers\Api\V1\Guest\GuestQuotationController;
 use App\Http\Controllers\Api\V1\Provider\Booking\CheckInBookingController;
 use App\Http\Controllers\Api\V1\Provider\Booking\CompleteBookingController;
 use App\Http\Controllers\Api\V1\Provider\Business\AvailabilityController as ProviderAvailabilityManagementController;
@@ -108,10 +112,46 @@ Route::prefix('v1')->name('catalog.')->group(function () {
     Route::get('businesses/{business}/reviews', BusinessReviewController::class)->name('businesses.reviews.index');
 });
 
+// SRS §6.1: booking creation is public. One endpoint, two actor kinds —
+// an authenticated caller books as themselves, anyone else books as a
+// guest. StoreBookingRequest is what tells them apart; there is no separate
+// guest creation route to keep in sync.
+//
+// throttle:guest-booking limits per-IP *and* per-normalized-email, and is a
+// no-op for authenticated callers (see AppServiceProvider). Idempotency-Key
+// is still required, scoped by the acting identity.
+Route::post('v1/bookings', StoreBookingController::class)
+    ->middleware(['throttle:guest-booking', 'idempotent'])
+    ->name('bookings.store');
+
+Route::prefix('v1/guest')->name('guest.')->group(function () {
+    // Enumeration-resistant: always 202, always the same body, emails a
+    // fresh tracking link only on a match. Rate-limited on the same two
+    // axes as creation so it can't be used to mine booking numbers.
+    Route::post('bookings/lookup', GuestBookingLookupController::class)
+        ->middleware('throttle:guest-booking')
+        ->name('bookings.lookup');
+
+    // Everything below is opened by an X-Booking-Token and nothing else.
+    Route::middleware('guest.booking')->group(function () {
+        Route::get('bookings/{bookingNumber}', [GuestBookingController::class, 'show'])->name('bookings.show');
+        Route::patch('bookings/{bookingNumber}/cancel', [GuestBookingController::class, 'cancel'])->name('bookings.cancel');
+
+        Route::post('quotations/{quotation}/accept', [GuestQuotationController::class, 'accept'])
+            ->middleware('idempotent')
+            ->name('quotations.accept');
+        Route::post('quotations/{quotation}/reject', [GuestQuotationController::class, 'reject'])
+            ->name('quotations.reject');
+
+        Route::post('payments/intents', GuestPaymentIntentController::class)
+            ->middleware('idempotent')
+            ->name('payments.intents.store');
+    });
+});
+
 Route::prefix('v1/bookings')->name('bookings.')->middleware('api.protected')->group(function () {
     Route::get('/', [BookingController::class, 'index'])->name('index');
     Route::get('{booking}', [BookingController::class, 'show'])->name('show');
-    Route::post('/', StoreBookingController::class)->middleware('idempotent')->name('store');
     Route::patch('{booking}/cancel', CancelBookingController::class)->name('cancel');
     Route::post('{booking}/check-in', CheckInBookingController::class)->name('check-in');
     Route::post('{booking}/complete', CompleteBookingController::class)->name('complete');

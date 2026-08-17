@@ -13,6 +13,7 @@ use App\Domain\Payment\Services\PaymentGateway;
 use App\Domain\User\Models\User;
 use App\Support\Action;
 use App\Support\ConflictException;
+use App\Support\ValueObjects\BookingActor;
 use App\Support\ValueObjects\Money;
 
 /**
@@ -42,7 +43,7 @@ final class ConfirmBookingCompletion implements Action
             );
         }
 
-        $booking = $this->transition->handle($booking, BookingStatus::Completed, $customer, 'Customer confirmed completion.');
+        $booking = $this->transition->handle($booking, BookingStatus::Completed, BookingActor::user($customer), 'Customer confirmed completion.');
 
         $this->captureRemainderIfDeposited($booking);
 

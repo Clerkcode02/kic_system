@@ -61,11 +61,40 @@ class DatabaseSeeder extends Seeder
         $businesses = $this->seedBusinesses($categories);
         $businesses->each(fn (Business $business) => $business->user->assignRole(RoleName::ProviderOwner->value));
 
+        // Fixed-credential demo accounts (password: "password") so the demo
+        // login docs stay correct without digging into random factory data.
+        $demoProviderUser = User::factory()->provider()->create([
+            'name' => 'Demo Provider',
+            'email' => 'provider@example.com',
+        ]);
+        $demoProvider = Business::factory()
+            ->verified()
+            ->nearCity(self::CITY_LAT, self::CITY_LNG)
+            ->create(['user_id' => $demoProviderUser->id, 'legal_name' => 'Demo Provider Business']);
+        $demoProviderUser->assignRole(RoleName::ProviderOwner->value);
+        BusinessDocument::factory()->verified()->create(['business_id' => $demoProvider->id]);
+        foreach (range(0, 4) as $dayOfWeek) {
+            ProviderAvailability::factory()->create(['business_id' => $demoProvider->id, 'day_of_week' => $dayOfWeek]);
+        }
+        Service::factory()->count(3)->create([
+            'business_id' => $demoProvider->id,
+            'category_id' => fn () => $categories->random()->id,
+        ]);
+        $businesses = $businesses->push($demoProvider);
+
         $customers = User::factory()->customer()->count(20)->create();
         $customers->each(function (User $customer) {
             Address::factory()->for($customer, 'user')->create();
             $customer->assignRole(RoleName::Customer->value);
         });
+
+        $demoCustomer = User::factory()->customer()->create([
+            'name' => 'Demo Customer',
+            'email' => 'customer@example.com',
+        ]);
+        Address::factory()->for($demoCustomer, 'user')->create();
+        $demoCustomer->assignRole(RoleName::Customer->value);
+        $customers = $customers->push($demoCustomer);
 
         $freelancers = $this->seedFreelancers();
 
@@ -137,6 +166,44 @@ class DatabaseSeeder extends Seeder
             'value' => '48',
             'type' => 'integer',
             'description' => 'Hours a booking can sit in waiting_for_quotation before the provider is nudged.',
+        ]);
+
+        // SRS §6.1 "Abuse controls" — every guest-booking limit and TTL is
+        // admin-configurable rather than a constant, so an operator can
+        // tighten them mid-incident without a deploy.
+        PlatformSetting::factory()->create([
+            'key' => 'guest.booking_token_ttl_days',
+            'value' => '30',
+            'type' => 'integer',
+            'description' => 'Days a guest booking access token stays valid before it must be re-issued via lookup.',
+        ]);
+
+        PlatformSetting::factory()->create([
+            'key' => 'guest.max_open_bookings',
+            'value' => '5',
+            'type' => 'integer',
+            'description' => 'Maximum concurrently open bookings a single guest email may hold.',
+        ]);
+
+        PlatformSetting::factory()->create([
+            'key' => 'guest.rate_limit_per_ip_per_hour',
+            'value' => '10',
+            'type' => 'integer',
+            'description' => 'Guest booking creations and lookups allowed per IP per hour.',
+        ]);
+
+        PlatformSetting::factory()->create([
+            'key' => 'guest.rate_limit_per_email_per_hour',
+            'value' => '5',
+            'type' => 'integer',
+            'description' => 'Guest booking creations and lookups allowed per normalized email per hour.',
+        ]);
+
+        PlatformSetting::factory()->create([
+            'key' => 'guest.booking_captcha_enabled',
+            'value' => '0',
+            'type' => 'boolean',
+            'description' => 'Whether guest booking creation requires a captcha. Requires a real CaptchaVerifier binding.',
         ]);
 
         PlatformSetting::factory()->create([

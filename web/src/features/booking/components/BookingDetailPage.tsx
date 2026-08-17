@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { Button, Card, EmptyState, Skeleton } from '@/components'
 import { QuotationPanel } from '@/features/quotation'
 import { BookingPaymentPanel } from '@/features/payments'
+import { useBookAgain } from '../hooks/useBookAgain'
 import { useBooking } from '../hooks/useBookings'
 import { AttachmentList } from './AttachmentList'
 import { BookingStatusBadge } from './BookingStatusBadge'
@@ -21,6 +22,7 @@ const CANCELLABLE_STATUSES = new Set([
 export function BookingDetailPage() {
   const { bookingId } = useParams<{ bookingId: string }>()
   const { data: booking, isLoading, isError } = useBooking(bookingId)
+  const bookAgain = useBookAgain()
   const [isCancelOpen, setIsCancelOpen] = useState(false)
 
   if (isLoading) {
@@ -68,14 +70,15 @@ export function BookingDetailPage() {
               {booking.time_slot_start.slice(0, 5)}–{booking.time_slot_end.slice(0, 5)}
             </p>
           </div>
-          {booking.address && (
-            <div className="col-span-2">
-              <p className="text-gray-500">Location</p>
-              <p className="font-medium text-gray-900">
-                {booking.address.street}, {booking.address.city}, {booking.address.state_province}
-              </p>
-            </div>
-          )}
+          <div className="col-span-2">
+            <p className="text-gray-500">Location</p>
+            <p className="font-medium text-gray-900">
+              {booking.service_address.line1}
+              {booking.service_address.line2 ? `, ${booking.service_address.line2}` : ''},{' '}
+              {booking.service_address.city}, {booking.service_address.province}{' '}
+              {booking.service_address.postal_code}
+            </p>
+          </div>
           {booking.notes && (
             <div className="col-span-2">
               <p className="text-gray-500">Notes</p>
@@ -83,17 +86,21 @@ export function BookingDetailPage() {
             </div>
           )}
         </div>
-        {canCancel && (
-          <Button
-            type="button"
-            variant="danger"
-            size="sm"
-            onClick={() => setIsCancelOpen(true)}
-            className="mt-2 self-start"
-          >
-            Cancel booking
+        <div className="mt-2 flex flex-wrap gap-2">
+          {canCancel && (
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              onClick={() => setIsCancelOpen(true)}
+            >
+              Cancel booking
+            </Button>
+          )}
+          <Button type="button" variant="secondary" size="sm" onClick={() => bookAgain(booking)}>
+            Book again
           </Button>
-        )}
+        </div>
       </Card>
 
       {booking.quotations.length > 0 && (

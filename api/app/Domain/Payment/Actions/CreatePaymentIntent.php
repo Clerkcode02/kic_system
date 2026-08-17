@@ -10,10 +10,10 @@ use App\Domain\Payment\Enums\PaymentStatus;
 use App\Domain\Payment\Enums\PaymentType;
 use App\Domain\Payment\Models\Payment;
 use App\Domain\Payment\Services\PaymentGateway;
-use App\Domain\User\Models\User;
 use App\Support\Action;
 use App\Support\ConflictException;
 use App\Support\PaymentsBlockedException;
+use App\Support\ValueObjects\BookingActor;
 use App\Support\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
 
@@ -33,7 +33,7 @@ final class CreatePaymentIntent implements Action
     /**
      * @return array{payment: Payment, client_secret: ?string}
      */
-    public function handle(Booking|Milestone $payable, User $actor): array
+    public function handle(Booking|Milestone $payable, BookingActor $actor): array
     {
         return DB::transaction(fn () => $payable instanceof Booking
             ? $this->forBooking($payable)

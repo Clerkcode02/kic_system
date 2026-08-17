@@ -13,9 +13,9 @@ use App\Domain\Payment\Services\PaymentGateway;
 use App\Domain\Quotation\Events\QuotationAccepted;
 use App\Domain\Quotation\Models\Quotation;
 use App\Domain\Quotation\StateMachines\QuotationStateMachine;
-use App\Domain\User\Models\User;
 use App\Support\Action;
 use App\Support\PaymentsBlockedException;
+use App\Support\ValueObjects\BookingActor;
 use App\Support\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
 
@@ -40,7 +40,7 @@ final class AcceptQuotation implements Action
     /**
      * @return array{quotation: Quotation, payment: Payment, client_secret: ?string}
      */
-    public function handle(Quotation $quotation, User $actor): array
+    public function handle(Quotation $quotation, BookingActor $actor): array
     {
         if (! $quotation->booking->provider->canReceiveFunds()) {
             throw new PaymentsBlockedException(

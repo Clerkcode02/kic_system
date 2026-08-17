@@ -40,11 +40,22 @@ class BookingResource extends JsonResource
                 'legal_name' => $this->provider->legal_name,
                 'rating_avg' => (float) $this->provider->rating_avg,
             ],
+            // A guest booking has no customer row (SRS §6.1) — the contact
+            // accessors give one shape for both actor kinds without any
+            // caller branching on customer_id.
             'customer' => [
-                'id' => $this->customer->id,
-                'name' => $this->customer->name,
+                'id' => $this->customer_id,
+                'name' => $this->contactName(),
+                'is_guest' => $this->isGuest(),
             ],
-            'address' => $this->whenLoaded('address', fn () => new AddressResource($this->address)),
+            'address' => $this->whenLoaded('address', fn () => $this->address === null ? null : new AddressResource($this->address)),
+            'service_address' => [
+                'line1' => $this->service_address_line1,
+                'line2' => $this->service_address_line2,
+                'city' => $this->service_address_city,
+                'province' => $this->service_address_province,
+                'postal_code' => $this->service_address_postal_code,
+            ],
             'status_history' => BookingStatusHistoryResource::collection($this->whenLoaded('statusHistory')),
             'attachments' => BookingAttachmentResource::collection($this->whenLoaded('attachments')),
             'quotations' => QuotationResource::collection($this->whenLoaded('quotations')),

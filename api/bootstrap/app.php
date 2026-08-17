@@ -28,6 +28,17 @@ return Application::configure(basePath: dirname(__DIR__))
             'not-suspended' => \App\Http\Middleware\EnsureNotSuspended::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'idempotent' => \App\Http\Middleware\HandleIdempotency::class,
+            'resolve-booking-actor' => \App\Http\Middleware\ResolveBookingActor::class,
+        ]);
+
+        // SRS §6.1 — the guest surface. `resolve-booking-actor` runs first
+        // so `idempotent` can scope keys by the resolved actor, and so a
+        // bad/expired/foreign token 404s before any handler sees the
+        // request. Deliberately *not* built on api.protected: there is no
+        // session, no EnsureVerified and no EnsureNotSuspended to apply to
+        // an actor with no account.
+        $middleware->group('guest.booking', [
+            'resolve-booking-actor',
         ]);
 
         // CLAUDE.md §4 — the standard stack for every authenticated write

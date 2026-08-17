@@ -76,7 +76,8 @@ Server-side radius search stays on PostGIS regardless of which geocoding provide
 erDiagram
     USERS ||--o{ BUSINESSES : owns
     USERS ||--o{ FREELANCER_PROFILES : has
-    USERS ||--o{ BOOKINGS : "requests as customer"
+    USERS ||--o{ BOOKINGS : "requests as customer (nullable — guest bookings have none)"
+    BOOKINGS ||--o{ BOOKING_ACCESS_TOKENS : "granted to guest"
     USERS ||--o{ ADDRESSES : has
     BUSINESSES ||--o{ SERVICES : offers
     BUSINESSES ||--o{ BUSINESS_DOCUMENTS : uploads
@@ -156,18 +157,40 @@ erDiagram
     BOOKINGS {
         uuid id PK
         string booking_number UK
-        uuid customer_id FK
+        uuid customer_id FK "nullable — null for a guest booking"
+        string guest_name "nullable — set iff customer_id is null"
+        string guest_email "nullable"
+        string guest_phone "nullable"
+        string guest_email_normalized "nullable, indexed — lowercased/trimmed, drives claiming"
+        uuid claimed_by_user_id FK "nullable — set when a verified account claims the booking"
+        timestamp claimed_at "nullable"
         uuid provider_id FK
         uuid service_id FK
         date scheduled_date
         time time_slot_start
         time time_slot_end
-        uuid address_id FK
+        uuid address_id FK "nullable — registered users only"
+        string service_address_line1 "denormalized snapshot, always populated"
+        string service_address_line2
+        string service_address_city
+        string service_address_province
+        string service_address_postal_code
+        geography service_location "Point,4326 — GIST-indexed snapshot of the service address"
         decimal lat
         decimal lng
         text notes
         enum status
         enum payment_status "unpaid|partial|paid|refunded"
+        timestamps created_at_updated_at
+    }
+    BOOKING_ACCESS_TOKENS {
+        uuid id PK
+        uuid booking_id FK
+        string token_hash UK "sha256 of the plaintext — plaintext is never stored"
+        timestamp expires_at
+        timestamp last_used_at
+        timestamp revoked_at "set when the booking is claimed"
+        string created_ip
         timestamps created_at_updated_at
     }
     QUOTATIONS {
@@ -400,10 +423,16 @@ Base: `/api/v1`. Versioned from day one. All authenticated routes via Sanctum, u
 | | POST | `/admin/categories` | Admin creates category (no-code) |
 | | GET | `/services?category=&location=&sort=` | Browse services |
 | | GET | `/services/{id}/pricing` | Estimated pricing before booking |
-| Booking | POST | `/bookings` | Create booking request |
+| Booking | POST | `/bookings` | Create booking request — **public**; authenticated or guest (§6.1) |
+| | GET | `/bookings` | List own bookings (registered customers only) |
 | | GET | `/bookings/{id}` | Booking detail incl. status history |
 | | PATCH | `/bookings/{id}/cancel` | Cancel with reason |
 | | GET | `/providers/{id}/availability?date=` | Availability check (drives calendar UI) |
+| Guest | GET | `/guest/bookings/{bookingNumber}` | Track a guest booking (`X-Booking-Token`) |
+| | PATCH | `/guest/bookings/{bookingNumber}/cancel` | Cancel with reason |
+| | POST | `/guest/quotations/{id}/accept` \| `/reject` | Quotation decision |
+| | POST | `/guest/payments/intents` | Create PaymentIntent for the tracked booking |
+| | POST | `/guest/bookings/lookup` | Re-send a tracking link — always `202`, always the same body |
 | Quotation | POST | `/bookings/{id}/quotations` | Provider sends quotation |
 | | POST | `/quotations/{id}/accept` | Customer accepts → triggers payment intent |
 | | POST | `/quotations/{id}/reject` | Customer rejects |
@@ -437,20 +466,109 @@ Conventions: cursor pagination on list endpoints; `422` for validation with fiel
 
 ### Role & Permission Matrix (excerpt)
 
-| Action | Customer | Provider (Business) | Freelancer | Admin |
-|---|:---:|:---:|:---:|:---:|
-| Browse services / projects | ✅ | ✅ | ✅ | ✅ |
-| Request quotation | ✅ | ❌ | – | – |
-| Send quotation | ❌ | ✅ (verified only) | – | – |
-| Accept booking payment | ✅ | – | – | – |
-| Publish project | ✅ (as client) | – | – | – |
-| Submit proposal | – | – | ✅ (approved only) | – |
-| Approve milestone / release payment | – | – | – (receives) | ✅ audit only |
-| Approve business/freelancer | ❌ | ❌ | ❌ | ✅ |
-| Manage categories | ❌ | ❌ | ❌ | ✅ |
-| Manage platform fees | ❌ | ❌ | ❌ | ✅ |
-| Issue refunds | ❌ | ❌ | ❌ | ✅ |
-| View audit trail | ❌ | own scope only | own scope only | ✅ full |
+| Action | Guest | Customer | Provider (Business) | Freelancer | Admin |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Browse services | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Browse projects | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Create booking | ✅ | ✅ | ❌ | – | – |
+| View / track own booking | ✅ (token only) | ✅ | ✅ own | – | ✅ |
+| List own bookings | ❌ | ✅ | ✅ own | – | ✅ |
+| Request quotation | ✅ | ✅ | ❌ | – | – |
+| Send quotation | ❌ | ❌ | ✅ (verified only) | – | – |
+| Accept / reject quotation | ✅ (token only) | ✅ | – | – | – |
+| Accept booking payment | ✅ (token only) | ✅ | – | – | – |
+| Cancel own booking | ✅ (token only) | ✅ | ✅ own | – | ✅ |
+| Leave a review | ❌ (invited to register) | ✅ | – | – | – |
+| Save addresses | ❌ | ✅ | – | – | – |
+| Publish project | ❌ | ✅ (as client) | – | – | – |
+| Submit proposal | ❌ | – | – | ✅ (approved only) | – |
+| Approve milestone / release payment | ❌ | – | – | – (receives) | ✅ audit only |
+| Approve business/freelancer | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Manage categories | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Manage platform fees | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Issue refunds | ❌ | ❌ | ❌ | ❌ | ✅ |
+| View audit trail | ❌ | ❌ | own scope only | own scope only | ✅ full |
+
+The entire freelance side — projects, proposals, contracts, milestones, escrow — requires an
+account. There is no guest path into it.
+
+---
+
+## 6.1 Guest Booking
+
+A booking may be placed, tracked, quoted, paid and cancelled without an account. Registering
+is optional and adds booking history, status tracking in-app, and re-booking.
+
+**Exactly one actor.** A booking carries either `customer_id` **or** a guest contact triple
+(`guest_name`, `guest_email`, `guest_phone`) — never both, never neither. This is enforced by
+a database `CHECK` constraint, not only by PHP:
+
+```sql
+CHECK (
+  (customer_id IS NOT NULL AND guest_email IS NULL)
+  OR
+  (customer_id IS NULL AND guest_name IS NOT NULL AND guest_email IS NOT NULL AND guest_phone IS NOT NULL)
+)
+```
+
+**The state machine is unchanged.** Guest is an attribute of *ownership*, not a state. §8's
+diagram applies identically to both actor kinds, and both go through the same Actions and
+StateMachines — `App\Support\ValueObjects\BookingActor` is the value object every booking
+Action accepts in place of a `User`.
+
+**Guests may do exactly five things:** create a booking, view/track it, accept or reject its
+quotation, pay it, and cancel it. Nothing else — no reviews (the completion email invites them
+to register in order to review), no saved addresses, no list endpoints, no freelance surface.
+
+### Booking access tokens
+
+Guest authorization is a hashed, expiring **booking access token**, presented as an
+`X-Booking-Token` header. The plaintext is generated once, returned once in the creation
+response, and emailed as a tracking link; only its `sha256` hash is persisted.
+
+- The emailed link carries the token once as `?token=`; the SPA exchanges it into the API
+  client and strips it from the URL with `history.replaceState`.
+- **Booking number + email is never sufficient to read a booking.** Any mismatched, expired,
+  revoked or unknown token returns **404**, never 403 — the API never confirms that a booking
+  number exists to a caller who cannot already read it.
+- A token is scoped to one booking. Presenting booking A's token against booking B is a 404.
+- `POST /guest/bookings/lookup` accepts `{booking_number, email}` and always responds `202`
+  with a byte-identical body whether or not it matched; on a match it emails a fresh link. It
+  is useless for enumeration.
+- Comparison is constant-time, and resolution is header-first — no cookie or session
+  assumption reaches domain code (CLAUDE.md §9 item 4).
+
+`ResolveBookingActor` middleware resolves `auth:sanctum` first and falls back to the token,
+producing a `BookingActor` either way.
+
+### Claiming
+
+Guest bookings are claimed into an account **on email verification only** — never on
+registration, never on login. `ClaimGuestBookings` matches on `guest_email_normalized`,
+sets `customer_id`/`claimed_by_user_id`/`claimed_at`, revokes every access token for the
+claimed bookings, and fires an `Auditable` `GuestBookingsClaimed` event. An account that has
+registered but not verified claims nothing.
+
+### Abuse controls
+
+`throttle:guest-booking` rate-limits creation per-IP **and** per-normalized-email, and a cap
+limits concurrent open guest bookings per email. A `CaptchaVerifier` interface (with a `Null`
+implementation, enabled behind a `platform_settings` flag) guards creation. Every limit and
+TTL lives in `platform_settings`, not in constants.
+
+### Payments, notifications, audit
+
+Payment is identical to the registered path — destination charge with `application_fee_amount`,
+totals recomputed server-side, `Idempotency-Key` required (scoped by `(key, guest_email_normalized)`
+for guests). A Stripe Customer is reused per normalized guest email and stored on the booking.
+Webhooks are unchanged.
+
+Guest notifications route via `Notification::route('mail', $email)` — mail only. **No
+placeholder `users` row is ever created for a guest.** Every registered-customer booking
+notification has a guest equivalent.
+
+The audit actor for a guest is the string `guest:<sha256 of normalized email>` in
+`audit_logs.actor_label` — never a raw email, and `actor_id` stays null.
 
 ---
 
@@ -512,6 +630,11 @@ stateDiagram-v2
     Refunded --> [*]
     Completed --> [*]
 ```
+
+This graph is **identical for guest and registered bookings**. Guest is an attribute of
+ownership (§6.1), not a state: there is no guest-specific status, no guest-specific edge, and
+no separate guest state machine. `BookingStateMachine` and every booking Action are shared,
+taking a `BookingActor` rather than a `User`.
 
 ---
 
@@ -581,6 +704,14 @@ sequenceDiagram
 
 Every notification event in the spec (booking created/accepted/cancelled, quotation sent/accepted/rejected, payment succeeded, refund processed, proposal received, freelancer hired, milestone submitted/approved, review received, payout completed) maps to one `Illuminate\Notification` class implementing `via()` per-user-preference (users can opt out of email/SMS/push per category in a `notification_preferences` table, in-app is always on).
 
+**Guest recipients (§6.1).** A guest booking has no `users` row and never gets one — a
+placeholder user is never created. Guest notifications go out through an on-demand notifiable
+(`Notification::route('mail', $guestEmail)`) and are **mail only**: there is no in-app
+inbox, no preference row, and no push subscription to resolve. Every booking notification
+that a registered customer receives has a guest equivalent carrying the tracking link instead
+of an in-app deep link. The completion email additionally carries a register CTA with the
+guest's email prefilled, explaining that verifying attaches this booking to the new account.
+
 ---
 
 ## 12. Admin Workflow
@@ -607,7 +738,8 @@ Admin surfaces: verification queue (business + freelancer), category manager (CR
 ## 13. Audit Trail Design
 
 - Single `audit_logs` table, **insert-only**, populated by a global listener (`RecordAuditEntry`) subscribed to a marker interface `Auditable` implemented by every domain event that represents a critical action (approvals, suspensions, refunds, payouts, status transitions, admin overrides).
-- Each entry captures `actor_id`, `action` (dot-notation, e.g. `booking.status_changed`), `auditable_type/id`, `before_state`/`after_state` (JSONB diffs, not full snapshots, to keep rows small), `ip_address`, `user_agent`, `created_at`.
+- Each entry captures `actor_id`, `actor_label`, `action` (dot-notation, e.g. `booking.status_changed`), `auditable_type/id`, `before_state`/`after_state` (JSONB diffs, not full snapshots, to keep rows small), `ip_address`, `user_agent`, `created_at`.
+- **Guest actors (§6.1)** have no `users` row, so `actor_id` stays null and `actor_label` holds `guest:<sha256 of the normalized email>`. A raw guest email is never written to the audit trail. Events opt into this by additionally implementing `App\Support\LabelsAuditActor`.
 - Retention: audit logs are never deleted by the application; archival to cold storage (e.g. S3 Glacier via a scheduled export) after 2 years, configurable.
 - Read access gated by `AuditLogPolicy` — admins see everything; providers/freelancers can query a scoped view of entries where they are the actor or the subject entity is theirs (for transparency on disputes).
 
@@ -661,7 +793,9 @@ All scheduled jobs use `->withoutOverlapping()` and `->onOneServer()` (cache-bas
 
 ## 17. Security Best Practices
 
-- **Sanctum** + CSRF for SPA; rate limiting per route group (`throttle:auth`, `throttle:payments` tighter than general API).
+- **Sanctum** + CSRF for SPA; rate limiting per route group (`throttle:auth`, `throttle:payments`, `throttle:guest-booking` tighter than general API).
+- **Guest surface (§6.1) is closed by default**: the only unauthenticated write endpoints are `POST /bookings` and the enumerated `/guest/*` routes. Read access to a booking is authorized by a hashed booking access token and nothing else — never by booking number, never by email, never by the two combined. Failures are `404`, so the API leaks no existence signal.
+- **No plaintext token is ever persisted or logged** — only its `sha256`. Guest emails are redacted from logs, and appear in the audit trail only as `guest:<hash>`.
 - **Mass-assignment protection**: explicit `$fillable` per model, no `Model::unguard()`.
 - **Authorization**: every controller action backed by a Policy — no ad-hoc `if ($user->id === ...)` scattered in controllers.
 - **Input validation**: dedicated `FormRequest` per write endpoint; never trust client-computed totals (quotation totals, platform fees always recomputed server-side before persisting/charging).
@@ -684,6 +818,13 @@ All scheduled jobs use `->withoutOverlapping()` and `->onOneServer()` (cache-bas
 CREATE INDEX idx_bookings_provider_date ON bookings (provider_id, scheduled_date, time_slot_start);
 CREATE INDEX idx_bookings_customer ON bookings (customer_id, status);
 CREATE INDEX idx_bookings_status ON bookings (status) WHERE status NOT IN ('completed','cancelled');
+
+-- Guest booking (§6.1): claiming on email verification, and the per-email open-booking cap
+CREATE INDEX idx_bookings_guest_email ON bookings (guest_email_normalized) WHERE guest_email_normalized IS NOT NULL;
+-- Radius search over the denormalized service-address snapshot (guests have no addresses row)
+CREATE INDEX idx_bookings_service_location ON bookings USING GIST (service_location);
+-- Token resolution is a single hash equality lookup
+CREATE UNIQUE INDEX idx_booking_access_tokens_hash ON booking_access_tokens (token_hash);
 
 -- Service discovery / browse
 CREATE INDEX idx_services_category_active ON services (category_id) WHERE is_active = true;
@@ -719,6 +860,8 @@ CREATE INDEX idx_reviews_reviewee ON reviews (reviewee_id);
 |---|---|
 | Registration | Unique email/phone/business registration number; verification required before transacting |
 | Booking | No past bookings; no double-booking same provider/slot; within provider availability; blocked if provider suspended or at daily booking cap; must reference an active service |
+| Guest booking (§6.1) | Exactly one actor — DB `CHECK` rejects both-or-neither; guest contact fields sent by an authenticated caller are a `422`; capped concurrent open guest bookings per normalized email; `Idempotency-Key` required and scoped by `(key, guest_email_normalized)`; every rule above still applies unchanged |
+| Booking access token | Constant-time compare; scoped to one booking; expired/revoked/unknown/cross-booking → `404`, never `403`; lookup responses byte-identical for real and fake booking numbers |
 | Quotation | Configurable expiry with pre-expiry reminders; provider reminded/booking auto-expires if no quote sent in time; rejection allows revise-or-cancel |
 | Cancellation | Free cancel pre-acceptance; fee per policy post-acceptance; provider must supply reason; repeated provider cancellations flagged and factored into rating |
 | Payment | Must succeed before confirmation; idempotent (no duplicate charge per booking/milestone); payouts blocked until completion/approval; every transaction audit-logged |

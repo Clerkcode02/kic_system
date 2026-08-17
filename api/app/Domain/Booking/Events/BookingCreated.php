@@ -6,10 +6,11 @@ namespace App\Domain\Booking\Events;
 
 use App\Domain\Booking\Models\Booking;
 use App\Support\Auditable;
+use App\Support\LabelsAuditActor;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class BookingCreated implements Auditable
+class BookingCreated implements Auditable, LabelsAuditActor
 {
     use Dispatchable;
     use SerializesModels;
@@ -21,6 +22,15 @@ class BookingCreated implements Auditable
     public function auditActorId(): ?string
     {
         return $this->booking->customer_id;
+    }
+
+    /**
+     * Guest bookings (SRS §6.1) have no customer_id to attribute to — the
+     * hashed-email label identifies the actor instead.
+     */
+    public function auditActorLabel(): ?string
+    {
+        return $this->booking->actor()->auditActorLabel();
     }
 
     public function auditAction(): string

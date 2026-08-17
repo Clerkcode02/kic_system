@@ -9,12 +9,13 @@ use App\Domain\Booking\Models\Booking;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\CancelBookingRequest;
 use App\Http\Resources\BookingResource;
+use App\Support\ValueObjects\BookingActor;
 
 class CancelBookingController extends Controller
 {
     public function __invoke(CancelBookingRequest $request, Booking $booking, CancelBooking $action): BookingResource
     {
-        $result = $action->handle($booking, $request->user(), $request->validated('reason'));
+        $result = $action->handle($booking, BookingActor::user($request->user()), $request->validated('reason'));
 
         return (new BookingResource($result['booking']))
             ->additional(['meta' => ['cancellation_fee_applied' => $result['cancellation_fee_applied']]]);

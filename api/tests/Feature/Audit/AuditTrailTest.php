@@ -86,7 +86,7 @@ it('writes an audit entry when a booking is created and when its status changes'
     app(\App\Domain\Booking\Actions\TransitionBookingStatus::class)->handle(
         $booking,
         BookingStatus::QuotationSent,
-        $customer,
+        \App\Support\ValueObjects\BookingActor::user($customer),
         'test transition',
     );
 

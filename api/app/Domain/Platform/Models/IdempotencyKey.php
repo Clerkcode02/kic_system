@@ -24,6 +24,7 @@ class IdempotencyKey extends Model
      */
     protected $fillable = [
         'key',
+        'scope',
         'user_id',
         'endpoint',
         'response_status',

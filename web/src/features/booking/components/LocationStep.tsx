@@ -4,104 +4,144 @@ import { Button, Card } from '@/components'
 import { cn } from '@/lib/cn'
 import { AddressFields, LocationPicker, type AddressFieldValues, type LatLng } from '@/lib/maps'
 import { ApiError } from '@/lib/api'
-import { useCreateAddress, useMyAddresses } from '../hooks/useAddresses'
+import { useMyAddresses } from '../hooks/useAddresses'
+import type { WizardAddress } from '@/stores/bookingWizardStore'
 
 interface LocationStepProps {
+  /** Anonymous visitors have no saved addresses and always enter one inline. */
+  isAuthenticated: boolean
   addressId: string | null
-  onChange: (addressId: string) => void
+  address: WizardAddress
+  onAddressIdChange: (addressId: string) => void
+  onAddressChange: (address: WizardAddress) => void
   onNext: () => void
   onBack: () => void
 }
 
-const EMPTY_ADDRESS: AddressFieldValues = {
-  street: '',
-  unit: '',
-  city: '',
-  province: '',
-  postal_code: '',
+function toFieldValues(address: WizardAddress): AddressFieldValues {
+  return {
+    street: address.line1,
+    unit: address.line2,
+    city: address.city,
+    province: address.province,
+    postal_code: address.postal_code,
+  }
 }
 
-export function LocationStep({ addressId, onChange, onNext, onBack }: LocationStepProps) {
-  const { data: addresses, isLoading } = useMyAddresses()
-  const { mutateAsync: saveAddress, isPending: isSaving } = useCreateAddress()
-  const [isAddingNew, setIsAddingNew] = useState(false)
-  const [fields, setFields] = useState<AddressFieldValues>(EMPTY_ADDRESS)
-  const [coords, setCoords] = useState<LatLng | null>(null)
+/**
+ * One location step for both actor kinds (SRS §6.1) — not a guest fork.
+ * The only difference is that the saved-address picker is absent when there
+ * is no account to have saved any, which is a rendering condition rather
+ * than a separate component.
+ *
+ * Geocoding happens once, on submit, inside LocationPicker — never per
+ * keystroke — and is Canada-scoped (CLAUDE.md §5 "Location").
+ */
+export function LocationStep({
+  isAuthenticated,
+  addressId,
+  address,
+  onAddressIdChange,
+  onAddressChange,
+  onNext,
+  onBack,
+}: LocationStepProps) {
+  const { data: addresses, isLoading } = useMyAddresses(isAuthenticated)
+  const savedAddresses = isAuthenticated ? (addresses ?? []) : []
+
+  const [isEnteringNew, setIsEnteringNew] = useState(!isAuthenticated)
+  const [fields, setFields] = useState<AddressFieldValues>(toFieldValues(address))
+  const [coords, setCoords] = useState<LatLng | null>(
+    address.lat !== null && address.lng !== null ? { lat: address.lat, lng: address.lng } : null,
+  )
 
   const mapAddress = [fields.street, fields.city, fields.province].filter(Boolean).join(', ')
 
-  const handleSaveNewAddress = async () => {
+  const commitInlineAddress = (): boolean => {
     if (!coords) {
       toast.error('Drag the pin or locate your address on the map first.')
-      return
+      return false
     }
+    if (!fields.street || !fields.city || !fields.province || !fields.postal_code) {
+      toast.error('Fill in the street, city, province and postal code.')
+      return false
+    }
+
+    onAddressChange({
+      line1: fields.street,
+      line2: fields.unit ?? '',
+      city: fields.city,
+      province: fields.province,
+      postal_code: fields.postal_code,
+      lat: coords.lat,
+      lng: coords.lng,
+    })
+
+    return true
+  }
+
+  const handleContinue = () => {
     try {
-      const address = await saveAddress({
-        street: fields.street,
-        unit: fields.unit || null,
-        city: fields.city,
-        state_province: fields.province,
-        postal_code: fields.postal_code,
-        lat: coords.lat,
-        lng: coords.lng,
-      })
-      onChange(address.id)
-      setIsAddingNew(false)
-      setFields(EMPTY_ADDRESS)
-      setCoords(null)
+      if (isEnteringNew) {
+        if (!commitInlineAddress()) return
+      } else if (!addressId) {
+        toast.error('Choose an address, or enter a new one.')
+        return
+      }
+      onNext()
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Could not save this address.')
+      toast.error(error instanceof ApiError ? error.message : 'Could not use this address.')
     }
   }
 
-  if (isLoading) return null
+  if (isAuthenticated && isLoading) return null
 
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-base font-semibold text-gray-900">Service location</h2>
 
-      {!isAddingNew && (
+      {!isEnteringNew && (
         <div className="flex flex-col gap-2">
-          {(addresses ?? []).map((address) => (
+          {savedAddresses.map((saved) => (
             <label
-              key={address.id}
+              key={saved.id}
               className={cn(
                 'flex cursor-pointer items-start gap-3 rounded-md border p-3',
-                addressId === address.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200',
+                addressId === saved.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200',
               )}
             >
               <input
                 type="radio"
                 name="address"
                 className="mt-1"
-                checked={addressId === address.id}
-                onChange={() => onChange(address.id)}
+                checked={addressId === saved.id}
+                onChange={() => onAddressIdChange(saved.id)}
               />
               <span className="text-sm">
-                <span className="font-medium text-gray-900">{address.label ?? 'Address'}</span>
+                <span className="font-medium text-gray-900">{saved.label ?? 'Address'}</span>
                 <br />
-                {address.street}
-                {address.unit ? `, ${address.unit}` : ''}, {address.city}, {address.state_province}{' '}
-                {address.postal_code}
+                {saved.street}
+                {saved.unit ? `, ${saved.unit}` : ''}, {saved.city}, {saved.state_province}{' '}
+                {saved.postal_code}
               </span>
             </label>
           ))}
-          {(addresses ?? []).length === 0 && (
+          {savedAddresses.length === 0 && (
             <p className="text-sm text-gray-500">No saved addresses yet. Add one below.</p>
           )}
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            onClick={() => setIsAddingNew(true)}
+            onClick={() => setIsEnteringNew(true)}
             className="self-start"
           >
-            + Add a new address
+            + Use a different address
           </Button>
         </div>
       )}
 
-      {isAddingNew && (
+      {isEnteringNew && (
         <Card className="flex flex-col gap-4">
           <AddressFields values={fields} onChange={setFields} />
           <LocationPicker
@@ -111,24 +151,17 @@ export function LocationStep({ addressId, onChange, onNext, onBack }: LocationSt
             coords={coords}
             onCoordsChange={setCoords}
           />
-          <div className="flex gap-3">
+          {isAuthenticated && savedAddresses.length > 0 && (
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setIsAddingNew(false)}
-              className="flex-1"
+              size="sm"
+              onClick={() => setIsEnteringNew(false)}
+              className="self-start"
             >
-              Cancel
+              Use a saved address instead
             </Button>
-            <Button
-              type="button"
-              isLoading={isSaving}
-              onClick={handleSaveNewAddress}
-              className="flex-1"
-            >
-              Save address
-            </Button>
-          </div>
+          )}
         </Card>
       )}
 
@@ -136,12 +169,7 @@ export function LocationStep({ addressId, onChange, onNext, onBack }: LocationSt
         <Button type="button" variant="secondary" onClick={onBack} className="flex-1">
           Back
         </Button>
-        <Button
-          type="button"
-          disabled={!addressId || isAddingNew}
-          onClick={onNext}
-          className="flex-1"
-        >
+        <Button type="button" onClick={handleContinue} className="flex-1">
           Continue
         </Button>
       </div>

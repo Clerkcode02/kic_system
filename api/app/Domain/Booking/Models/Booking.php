@@ -15,6 +15,7 @@ use App\Domain\Review\Models\Review;
 use App\Domain\User\Models\Address;
 use App\Domain\User\Models\User;
 use App\Support\Concerns\HasUuidv7;
+use App\Support\ValueObjects\BookingActor;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -35,12 +36,24 @@ class Booking extends Model
     protected $fillable = [
         'booking_number',
         'customer_id',
+        'guest_name',
+        'guest_email',
+        'guest_phone',
+        'guest_email_normalized',
+        'claimed_by_user_id',
+        'claimed_at',
+        'stripe_customer_id',
         'provider_id',
         'service_id',
         'scheduled_date',
         'time_slot_start',
         'time_slot_end',
         'address_id',
+        'service_address_line1',
+        'service_address_line2',
+        'service_address_city',
+        'service_address_province',
+        'service_address_postal_code',
         'lat',
         'lng',
         'notes',
@@ -63,7 +76,60 @@ class Booking extends Model
             'payment_status' => BookingPaymentStatus::class,
             'provider_completed_at' => 'datetime',
             'quotation_nudge_sent_at' => 'datetime',
+            'claimed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = [
+        // Never serialized by any Resource, but hidden as a backstop so a
+        // stray toArray()/log of a Booking can't leak guest PII
+        // (CLAUDE.md §2 — guest emails appear in the trail only as a hash).
+        'guest_email',
+        'guest_email_normalized',
+        'guest_phone',
+    ];
+
+    /**
+     * SRS §6.1: a booking has exactly one actor. This is the only sanctioned
+     * way to ask which kind — nothing may branch on `customer_id === null`
+     * directly (CLAUDE.md §5 "Guest booking").
+     */
+    public function isGuest(): bool
+    {
+        return $this->customer_id === null;
+    }
+
+    /**
+     * Where booking correspondence goes, regardless of actor kind.
+     */
+    public function contactEmail(): string
+    {
+        return $this->isGuest()
+            ? (string) $this->guest_email
+            : (string) $this->customer?->email;
+    }
+
+    public function contactName(): string
+    {
+        return $this->isGuest()
+            ? (string) $this->guest_name
+            : (string) $this->customer?->name;
+    }
+
+    public function contactPhone(): ?string
+    {
+        return $this->isGuest() ? $this->guest_phone : $this->customer?->phone;
+    }
+
+    /**
+     * The actor that placed this booking.
+     */
+    public function actor(): BookingActor
+    {
+        return BookingActor::fromBooking($this);
     }
 
     /**
@@ -72,6 +138,26 @@ class Booking extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'customer_id');
+    }
+
+    /**
+     * The account that later claimed this guest booking on email
+     * verification (SRS §6.1 "Claiming"). Retained alongside `customer_id`
+     * so the trail shows the booking was *placed* as a guest.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function claimedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'claimed_by_user_id');
+    }
+
+    /**
+     * @return HasMany<BookingAccessToken, $this>
+     */
+    public function accessTokens(): HasMany
+    {
+        return $this->hasMany(BookingAccessToken::class);
     }
 
     /**

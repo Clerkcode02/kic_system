@@ -4,7 +4,7 @@ import type { ServiceListItem } from '../types'
 
 export function ServiceCard({ service }: { service: ServiceListItem }) {
   return (
-    <Link to={`/customer/services/${service.id}`}>
+    <Link to={`/services/${service.id}`}>
       <Card className="flex h-full flex-col gap-2 transition hover:shadow-md">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-semibold text-gray-900">{service.title}</h3>

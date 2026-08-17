@@ -7,6 +7,7 @@ namespace App\Domain\Notification\Services;
 use App\Domain\Notification\Channels\WebPushChannel;
 use App\Domain\Notification\Enums\NotificationCategory;
 use App\Domain\User\Models\User;
+use Illuminate\Notifications\AnonymousNotifiable;
 
 /**
  * Resolves the channel list for a single notifiable + category from
@@ -25,6 +26,14 @@ class NotificationChannelResolver
      */
     public function resolve(object $notifiable, NotificationCategory $category): array
     {
+        // SRS §6.1: a guest has no users row and therefore no in-app inbox,
+        // no preference row and no push subscription — mail is the only
+        // channel that can reach them, and 'database' would try to write a
+        // notification against a null notifiable id.
+        if ($notifiable instanceof AnonymousNotifiable) {
+            return ['mail'];
+        }
+
         $channels = ['database'];
 
         if (! $notifiable instanceof User) {

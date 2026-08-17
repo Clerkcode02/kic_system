@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Quotation\Notifications;
 
+use App\Domain\Booking\Notifications\Concerns\LinksToBooking;
 use App\Domain\Notification\Concerns\ResolvesNotificationChannels;
 use App\Domain\Notification\Contracts\ChannelResolvable;
 use App\Domain\Notification\Enums\NotificationCategory;
@@ -15,6 +16,7 @@ use Illuminate\Notifications\Notification;
 
 class QuotationSentNotification extends Notification implements ChannelResolvable, ShouldQueue
 {
+    use LinksToBooking;
     use Queueable;
     use ResolvesNotificationChannels;
 
@@ -63,6 +65,6 @@ class QuotationSentNotification extends Notification implements ChannelResolvabl
 
     private function url(): string
     {
-        return rtrim((string) config('app.frontend_url'), '/')."/quotations/{$this->quotation->id}";
+        return $this->customerBookingUrl($this->quotation->booking);
     }
 }

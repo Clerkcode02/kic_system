@@ -61,7 +61,7 @@ export function BookingListPage() {
           title="No bookings yet"
           description="Browse services to request your first booking."
           action={
-            <Link to="/customer/services" className="text-sm font-medium text-blue-600 underline">
+            <Link to="/services" className="text-sm font-medium text-blue-600 underline">
               Browse services
             </Link>
           }

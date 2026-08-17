@@ -11,9 +11,12 @@ requirements.
 
 
 - **Services & bookings** — customers book verified provider businesses; providers respond
-  with quotations; payment on quotation acceptance.
+  with quotations; payment on quotation acceptance. **Booking does not require an account**:
+  a guest can start on the public landing page and go end to end, including payment. See
+  §5 "Guest booking" and SRS §6.1.
 - **Freelance marketplace** — clients publish projects; freelancers submit proposals;
-  hiring creates a contract broken into milestones paid from escrow.
+  hiring creates a contract broken into milestones paid from escrow. **Account required for
+  everything here** — there is no guest path into the freelance side.
 
 Four account types: **Customer, Provider (Business), Freelancer, Administrator.**
 
@@ -60,6 +63,19 @@ Four account types: **Customer, Provider (Business), Freelancer, Administrator.*
   recomputed server-side before persisting or charging.
 - ❌ No WebSockets / live chat / offline sync — explicitly out of scope (SRS §23.5).
 - ❌ No microservices. Modular monolith for v1.
+- ❌ **No read access to a booking authorized by booking number, email, or the two
+  combined.** The only key that opens a guest booking is a valid, unexpired, unrevoked
+  booking access token scoped to that booking. Failures return **404**, never 403 — the API
+  must never confirm that a booking number exists to a caller who can't already read it.
+- ❌ **No unauthenticated endpoint outside the guest surface listed in §5.** That surface is
+  `POST /bookings` plus `/guest/*`; adding any other public write route is a spec change.
+- ❌ **No claiming a guest booking on registration or login.** Claiming happens on **email
+  verification only**. An account that registered but never verified claims nothing.
+- ❌ No guest fork of a booking Action, StateMachine, or React wizard — guest and registered
+  paths share the same code, differing only by the `BookingActor` passed in.
+- ❌ No placeholder `users` row for a guest. Guest mail goes out via
+  `Notification::route('mail', $email)`.
+- ❌ No plaintext booking access token in the database, in a log line, or in the DOM.
 - ❌ No SMS integration anywhere — not phone-based OTP, not a phone-verification-via-SMS
   flow, not even a stubbed/log-driver SMS interface. Out of scope, full stop. `phone` on
   the user record stays a plain contact field with no SMS-backed verification wired to it.
@@ -117,7 +133,10 @@ Rules:
 
 ```
 src/
-├── app/routes/{customer,provider,freelancer,admin}/
+├── app/routes/{public,customer,provider,freelancer,admin}/
+│                             # `public/` renders with no session: no /auth/me blocking
+│                             # first paint, no redirect to login. A 401 from /auth/me is
+│                             # the normal anonymous state, not an error.
 ├── app/providers/            # AuthProvider, QueryClientProvider, ToastProvider
 ├── features/                 # feature-sliced, mirrors backend Domain modules
 │   └── <feature>/{components,hooks,api}/
@@ -136,24 +155,36 @@ src/
 Roles via `spatie/laravel-permission` (not a hardcoded enum switch):
 `customer`, `provider_owner`, `provider_staff`, `freelancer`, `admin`, `super_admin`.
 
-| Action | Customer | Provider | Freelancer | Admin |
-|---|:--:|:--:|:--:|:--:|
-| Browse services / projects | ✅ | ✅ | ✅ | ✅ |
-| Request quotation | ✅ | ❌ | – | – |
-| Send / revise quotation | ❌ | ✅ verified only | – | – |
-| Pay for booking | ✅ | – | – | – |
-| Publish project (as client) | ✅ | – | – | – |
-| Submit proposal | – | – | ✅ approved only | – |
-| Approve milestone / release escrow | ✅ (client) | – | – (receives) | audit only |
-| Approve/reject business or freelancer | ❌ | ❌ | ❌ | ✅ |
-| Manage categories / platform fees | ❌ | ❌ | ❌ | ✅ |
-| Issue refunds | ❌ | ❌ | ❌ | ✅ |
-| View audit trail | ❌ | own scope | own scope | ✅ full |
+**Guest** is not a role — it's the absence of one. A guest has no `users` row and is
+authorized purely by a booking access token (§5 "Guest booking").
+
+| Action | Guest | Customer | Provider | Freelancer | Admin |
+|---|:--:|:--:|:--:|:--:|:--:|
+| Browse services / projects | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Create booking | ✅ | ✅ | ❌ | – | – |
+| Request quotation | ✅ | ✅ | ❌ | – | – |
+| View / track own booking | ✅ token only | ✅ | ✅ own | – | ✅ |
+| List own bookings | ❌ | ✅ | ✅ own | – | ✅ |
+| Send / revise quotation | ❌ | ❌ | ✅ verified only | – | – |
+| Accept / reject quotation | ✅ token only | ✅ | – | – | – |
+| Pay for booking | ✅ token only | ✅ | – | – | – |
+| Cancel own booking | ✅ token only | ✅ | ✅ own | – | ✅ |
+| Leave a review | ❌ invited to register | ✅ | – | – | – |
+| Save addresses | ❌ | ✅ | – | – | – |
+| Publish project (as client) | ❌ | ✅ | – | – | – |
+| Submit proposal | ❌ | – | – | ✅ approved only | – |
+| Approve milestone / release escrow | ❌ | ✅ (client) | – | – (receives) | audit only |
+| Approve/reject business or freelancer | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Manage categories / platform fees | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Issue refunds | ❌ | ❌ | ❌ | ❌ | ✅ |
+| View audit trail | ❌ | ❌ | own scope | own scope | ✅ full |
 
 On top of roles, **every model has a Policy** enforcing ownership
 (`$booking->customer_id === $user->id`). No ad-hoc ownership `if`s in controllers.
 
 Protected route middleware order: `auth:sanctum` → `EnsureVerified` → `EnsureNotSuspended`.
+Guest routes instead run `ResolveBookingActor`, which tries `auth:sanctum` first and falls
+back to the `X-Booking-Token` header.
 
 ---
 
@@ -170,6 +201,31 @@ Completed`. Terminal: `Declined`, `QuotationExpired`, `Cancelled`, `Refunded`.
 Booking validation: no past dates; no double-booking the same provider slot; must be
 within provider availability; blocked if provider is suspended or at their daily cap;
 service must be active.
+
+### Guest booking
+A booking has **exactly one actor**: `customer_id` OR a guest contact triple
+(`guest_name`, `guest_email`, `guest_phone`). A DB `CHECK` constraint rejects both-or-neither
+— PHP validation is not the enforcement point. The address is a denormalized snapshot on
+`bookings` (line1/line2/city/province/postal_code + `service_location geography(Point,4326)`,
+GIST-indexed) so a guest needs no `addresses` row; `address_id` stays nullable for
+registered users.
+
+- **The state machine graph is unchanged.** Guest is ownership, not state.
+- Every booking Action takes `App\Support\ValueObjects\BookingActor`, never a `User`.
+  Guest and registered paths run the *same* Actions and StateMachines.
+- **Nothing may branch on `customer_id === null`.** Use `Booking::isGuest()`,
+  `contactEmail()`, `contactName()`.
+- Guests may only: create, view/track, accept/reject quotation, pay, cancel.
+- Authorization is a hashed, expiring booking access token in an `X-Booking-Token` header
+  (`booking_access_tokens.token_hash`, sha256, unique; plaintext returned exactly once at
+  creation and emailed as a tracking link). Constant-time compare. Anything wrong → 404.
+- `POST /guest/bookings/lookup` always returns 202 with an identical body; it emails a fresh
+  link only on a match.
+- Claiming happens on **email verification only**, matching `guest_email_normalized`;
+  claimed bookings have their tokens revoked and fire an `Auditable` event.
+- Rate limits, TTLs and the captcha flag live in `platform_settings`, not constants.
+- `Idempotency-Key` is still required on creation, scoped by `(key, guest_email_normalized)`.
+- Audit actor is `guest:<sha256 of normalized email>` in `audit_logs.actor_label`.
 
 ### Quotation
 A provider's priced response to a booking. Line-itemized: labor, materials, additional
@@ -341,7 +397,9 @@ These cost nothing today and prevent a rewrite later:
 2. **Auth is guard-agnostic.** `POST /auth/login` returns a `Set-Cookie` for stateful
    origins and a JSON `{ token }` for everything else. Build both branches now, even
    though only the cookie path is exercised. Policies and controllers read
-   `$request->user()` and never care which guard resolved it.
+   `$request->user()` and never care which guard resolved it. The guest booking token is a
+   third credential mode (`X-Booking-Token`), also header-based and equally guard-agnostic;
+   `lib/api` picks between cookie / Bearer / booking-token in **one** module.
 3. **Device-scoped tokens from day one** — `POST /auth/logout` (current device),
    `POST /auth/logout-all-devices`. Token names carry a device label.
 4. **No cookie/CSRF assumptions inside domain code.** Session handling stays behind the

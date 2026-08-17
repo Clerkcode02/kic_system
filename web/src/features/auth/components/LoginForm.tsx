@@ -14,11 +14,20 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
-export function LoginForm() {
+interface LoginFormProps {
+  /**
+   * Where to land after signing in. Set by /login from a validated `?next=`
+   * so the guest → register → claim detour returns the user where they were
+   * (SRS §6.1). Falls back to the RoleGuard's saved location, then '/'.
+   */
+  redirectTo?: string
+}
+
+export function LoginForm({ redirectTo }: LoginFormProps = {}) {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: Location })?.from?.pathname ?? '/'
+  const from = redirectTo ?? (location.state as { from?: Location })?.from?.pathname ?? '/'
 
   const {
     register,

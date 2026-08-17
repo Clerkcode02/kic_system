@@ -9,12 +9,13 @@ use App\Domain\Quotation\Models\Quotation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Quotation\AcceptQuotationRequest;
 use App\Http\Resources\QuotationResource;
+use App\Support\ValueObjects\BookingActor;
 
 class AcceptQuotationController extends Controller
 {
     public function __invoke(AcceptQuotationRequest $request, Quotation $quotation, AcceptQuotation $action): QuotationResource
     {
-        $result = $action->handle($quotation, $request->user());
+        $result = $action->handle($quotation, BookingActor::user($request->user()));
 
         return (new QuotationResource($result['quotation']))->additional([
             'meta' => [

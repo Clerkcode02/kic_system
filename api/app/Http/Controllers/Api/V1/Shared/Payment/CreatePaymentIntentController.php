@@ -8,6 +8,7 @@ use App\Domain\Payment\Actions\CreatePaymentIntent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payment\CreatePaymentIntentRequest;
 use App\Http\Resources\PaymentResource;
+use App\Support\ValueObjects\BookingActor;
 use Illuminate\Http\JsonResponse;
 
 class CreatePaymentIntentController extends Controller
@@ -16,7 +17,7 @@ class CreatePaymentIntentController extends Controller
     {
         $payable = $request->resolvePayable();
 
-        $result = $action->handle($payable, $request->user());
+        $result = $action->handle($payable, BookingActor::user($request->user()));
 
         return (new PaymentResource($result['payment']))
             ->additional(['meta' => ['client_secret' => $result['client_secret']]])

@@ -7,4 +7,5 @@ return [
     App\Providers\AuthServiceProvider::class,
     App\Providers\HorizonServiceProvider::class,
     App\Providers\MailServiceProvider::class,
+    App\Providers\OpenApiServiceProvider::class,
 ];

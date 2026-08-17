@@ -6,10 +6,9 @@ namespace App\Domain\Booking\Actions;
 
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Booking\Models\Booking;
-use App\Domain\User\Enums\RoleName;
-use App\Domain\User\Models\User;
 use App\Support\Action;
 use App\Support\ConflictException;
+use App\Support\ValueObjects\BookingActor;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -42,10 +41,13 @@ final class CancelBooking implements Action
     /**
      * @return array{booking: Booking, cancellation_fee_applied: bool}
      */
-    public function handle(Booking $booking, User $actor, ?string $reason): array
+    public function handle(Booking $booking, BookingActor $actor, ?string $reason): array
     {
-        $isAdmin = $actor->hasAnyRole([RoleName::Admin->value, RoleName::SuperAdmin->value]);
-        $isProvider = $booking->provider->user_id === $actor->id;
+        // A guest is neither — they can only ever be the booking's
+        // customer, so both branches below correctly fall through for them
+        // without any "is this a guest?" special-casing (SRS §6.1).
+        $isAdmin = $actor->isAdmin();
+        $isProvider = ! $actor->isGuest() && $booking->provider->user_id === $actor->userId();
 
         if ($booking->status === BookingStatus::InProgress && ! $isAdmin) {
             throw new ConflictException(

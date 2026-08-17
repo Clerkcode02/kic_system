@@ -437,6 +437,13 @@ it('rejects an unauthenticated request to every booking endpoint', function () {
 
     $this->getJson('/api/v1/bookings?role=customer')->assertUnauthorized();
     $this->getJson("/api/v1/bookings/{$booking->id}")->assertUnauthorized();
-    $this->postJson('/api/v1/bookings', [], ['Idempotency-Key' => (string) Str::uuid()])->assertUnauthorized();
     $this->patchJson("/api/v1/bookings/{$booking->id}/cancel")->assertUnauthorized();
+
+    // POST /bookings is deliberately NOT in that list: booking creation is
+    // public (SRS §6.1), and an anonymous caller with no guest contact
+    // details gets a 422 for the missing fields rather than a 401. The
+    // guest surface has its own coverage in tests/Feature/Guest.
+    $this->postJson('/api/v1/bookings', [], ['Idempotency-Key' => (string) Str::uuid()])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['guest_name', 'guest_email', 'guest_phone']);
 });

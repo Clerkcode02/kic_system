@@ -52,6 +52,32 @@ class BookingFactory extends Factory
         ];
     }
 
+    /**
+     * SRS §6.1: a guest booking has no customer and no saved address — the
+     * contact triple and the inline address snapshot stand in for both.
+     * The `bookings_exactly_one_actor` CHECK means these must be cleared
+     * together, which is exactly what this state does.
+     */
+    public function guest(?string $email = null): static
+    {
+        return $this->state(function (array $attributes) use ($email) {
+            $email ??= fake()->unique()->safeEmail();
+
+            return [
+                'customer_id' => null,
+                'address_id' => null,
+                'guest_name' => fake()->name(),
+                'guest_email' => $email,
+                'guest_phone' => fake()->numerify('+1416#######'),
+                'guest_email_normalized' => mb_strtolower(trim($email)),
+                'service_address_line1' => fake()->streetAddress(),
+                'service_address_city' => 'Toronto',
+                'service_address_province' => 'ON',
+                'service_address_postal_code' => 'M5V 2T6',
+            ];
+        });
+    }
+
     public function pending(): static
     {
         return $this->state(fn (array $attributes) => ['status' => BookingStatus::Pending]);

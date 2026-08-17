@@ -6,12 +6,13 @@ namespace App\Domain\Quotation\Events;
 
 use App\Domain\Payment\Models\Payment;
 use App\Domain\Quotation\Models\Quotation;
-use App\Domain\User\Models\User;
 use App\Support\Auditable;
+use App\Support\LabelsAuditActor;
+use App\Support\ValueObjects\BookingActor;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class QuotationAccepted implements Auditable
+class QuotationAccepted implements Auditable, LabelsAuditActor
 {
     use Dispatchable;
     use SerializesModels;
@@ -19,13 +20,18 @@ class QuotationAccepted implements Auditable
     public function __construct(
         public readonly Quotation $quotation,
         public readonly Payment $payment,
-        public readonly ?User $actor = null,
+        public readonly ?BookingActor $actor = null,
     ) {
     }
 
     public function auditActorId(): ?string
     {
-        return $this->actor?->id;
+        return $this->actor?->auditActorId();
+    }
+
+    public function auditActorLabel(): ?string
+    {
+        return $this->actor?->auditActorLabel();
     }
 
     public function auditAction(): string

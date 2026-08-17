@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Booking\Notifications;
 
 use App\Domain\Booking\Models\Booking;
+use App\Domain\Booking\Notifications\Concerns\LinksToBooking;
 use App\Domain\Notification\Concerns\ResolvesNotificationChannels;
 use App\Domain\Notification\Contracts\ChannelResolvable;
 use App\Domain\Notification\Enums\NotificationCategory;
@@ -15,6 +16,7 @@ use Illuminate\Notifications\Notification;
 
 class BookingCancelledNotification extends Notification implements ChannelResolvable, ShouldQueue
 {
+    use LinksToBooking;
     use Queueable;
     use ResolvesNotificationChannels;
 
@@ -62,6 +64,6 @@ class BookingCancelledNotification extends Notification implements ChannelResolv
 
     private function url(): string
     {
-        return rtrim((string) config('app.frontend_url'), '/')."/bookings/{$this->booking->id}";
+        return $this->customerBookingUrl($this->booking);
     }
 }

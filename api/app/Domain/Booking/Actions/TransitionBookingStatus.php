@@ -11,9 +11,9 @@ use App\Domain\Booking\Models\BookingStatusHistory;
 use App\Domain\Booking\StateMachines\BookingStateMachine;
 use App\Domain\Payment\Enums\PaymentStatus;
 use App\Domain\Payment\Models\Payment;
-use App\Domain\User\Models\User;
 use App\Support\Action;
 use App\Support\ConflictException;
+use App\Support\ValueObjects\BookingActor;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -28,9 +28,11 @@ final class TransitionBookingStatus implements Action
     /**
      * $actor is nullable for system-triggered transitions (scheduled sweeps
      * like ExpireStaleQuotationsJob/ExpireUnquotedBookingsJob) where there
-     * is no authenticated user to attribute the change to.
+     * is no actor to attribute the change to, and is a {@see BookingActor}
+     * rather than a User so guest and registered paths share this one write
+     * path (SRS §6.1).
      */
-    public function handle(Booking $booking, BookingStatus $to, ?User $actor, ?string $note = null): Booking
+    public function handle(Booking $booking, BookingStatus $to, ?BookingActor $actor, ?string $note = null): Booking
     {
         return DB::transaction(function () use ($booking, $to, $actor, $note) {
             $machine = new BookingStateMachine($booking->status);
@@ -65,7 +67,7 @@ final class TransitionBookingStatus implements Action
                 'booking_id' => $booking->id,
                 'from_status' => $from,
                 'to_status' => $to->value,
-                'changed_by' => $actor?->id,
+                'changed_by' => $actor?->userId(),
                 'note' => $note,
             ]);
 

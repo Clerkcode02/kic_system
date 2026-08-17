@@ -11,8 +11,16 @@ interface ScheduleStepProps {
   onNext: () => void
 }
 
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export function ScheduleStep({ businessId, date, slot, onChange, onNext }: ScheduleStepProps) {
-  const [localDate, setLocalDate] = useState(date)
+  // "Book again" prefills everything except the date (SRS §6.1 / re-booking):
+  // the calendar still has to open *somewhere*, so it opens on today while
+  // the wizard's own date stays blank until the user picks a slot. Continue
+  // is gated on that slot, so a blank date can never be submitted.
+  const [localDate, setLocalDate] = useState(date || todayIso())
   const { data: slots, isLoading } = useProviderAvailability(businessId, localDate)
 
   const handleDateChange = (nextDate: string) => {

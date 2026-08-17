@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Domain\Booking\Events;
 
 use App\Domain\Booking\Models\Booking;
-use App\Domain\User\Models\User;
 use App\Support\Auditable;
+use App\Support\LabelsAuditActor;
+use App\Support\ValueObjects\BookingActor;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class BookingStatusChanged implements Auditable
+class BookingStatusChanged implements Auditable, LabelsAuditActor
 {
     use Dispatchable;
     use SerializesModels;
@@ -19,13 +20,18 @@ class BookingStatusChanged implements Auditable
         public readonly Booking $booking,
         public readonly string $fromStatus,
         public readonly string $toStatus,
-        public readonly ?User $actor,
+        public readonly ?BookingActor $actor,
     ) {
     }
 
     public function auditActorId(): ?string
     {
-        return $this->actor?->id;
+        return $this->actor?->auditActorId();
+    }
+
+    public function auditActorLabel(): ?string
+    {
+        return $this->actor?->auditActorLabel();
     }
 
     public function auditAction(): string

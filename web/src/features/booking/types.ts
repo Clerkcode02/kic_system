@@ -91,7 +91,8 @@ export interface BookingListItem {
   payment_status: BookingPaymentStatus
   service: { id: string; title: string; pricing_type: 'fixed' | 'quote' }
   provider: { id: string; legal_name: string }
-  customer: { id: string; name: string }
+  /** `id` is null for a booking placed as a guest (SRS §6.1). */
+  customer: { id: string | null; name: string; is_guest: boolean }
   created_at: string
 }
 
@@ -106,7 +107,20 @@ export interface BookingDetail extends Omit<BookingListItem, 'service' | 'provid
     currency: string
   }
   provider: { id: string; legal_name: string; rating_avg: number }
-  address?: Address
+  address?: Address | null
+  /**
+   * Denormalized snapshot of where the work happens — always present, for
+   * guest and registered bookings alike (SRS §6.1), which is what makes
+   * "Book again" work for a claimed guest booking that never had an
+   * `addresses` row.
+   */
+  service_address: {
+    line1: string | null
+    line2: string | null
+    city: string | null
+    province: string | null
+    postal_code: string | null
+  }
   status_history: BookingStatusHistoryEntry[]
   attachments: BookingAttachment[]
   quotations: Quotation[]
@@ -115,11 +129,22 @@ export interface BookingDetail extends Omit<BookingListItem, 'service' | 'provid
 
 export interface CreateBookingPayload {
   service_id: string
-  address_id: string
   scheduled_date: string
   time_slot_start: string
   time_slot_end: string
   notes?: string
+  /** A saved address — registered customers only (SRS §6.1). */
+  address_id?: string
+  /** Inline address; used when no saved address was chosen. */
+  service_address?: {
+    line1: string
+    line2?: string | null
+    city: string
+    province: string
+    postal_code: string
+    lat: number
+    lng: number
+  }
 }
 
 export interface CursorPage<T> {

@@ -7,8 +7,10 @@ namespace App\Providers;
 use App\Domain\Audit\Listeners\RecordAuditEntry;
 use App\Domain\Booking\Events\BookingCreated;
 use App\Domain\Booking\Events\BookingStatusChanged;
+use App\Domain\Booking\Events\GuestBookingTokenIssued;
 use App\Domain\Booking\Listeners\SendBookingCreatedNotification;
 use App\Domain\Booking\Listeners\SendBookingStatusNotifications;
+use App\Domain\Booking\Listeners\SendGuestBookingTrackingLink;
 use App\Domain\Booking\Models\Booking;
 use App\Domain\Business\Events\BusinessSubmittedForVerification;
 use App\Domain\Business\Events\BusinessVerificationApproved;
@@ -50,6 +52,9 @@ use App\Domain\Payment\Models\Payout;
 use App\Domain\Payment\Services\PaymentGateway;
 use App\Domain\Payment\Services\StripePaymentService;
 use App\Domain\Platform\Models\PlatformSetting;
+use App\Domain\Platform\Services\CaptchaVerifier;
+use App\Domain\Platform\Services\NullCaptchaVerifier;
+use App\Domain\Platform\Services\SettingsRepository;
 use App\Domain\Quotation\Events\QuotationAccepted;
 use App\Domain\Quotation\Events\QuotationExpiryReminderDue;
 use App\Domain\Quotation\Events\QuotationRejected;
@@ -66,6 +71,7 @@ use App\Domain\User\Events\UserRegistered;
 use App\Domain\User\Listeners\SendEmailVerificationNotification;
 use App\Domain\User\Models\User;
 use App\Support\Auditable;
+use App\Support\ValueObjects\BookingActor;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -101,6 +107,12 @@ class AppServiceProvider extends ServiceProvider
         // implementation — no domain code changes, only this line
         // (CLAUDE.md §7/§9).
         $this->app->bind(PaymentGateway::class, StripePaymentService::class);
+
+        // SRS §6.1 "Abuse controls": the captcha seam on guest booking
+        // creation. Null by default and gated behind the
+        // `guest.booking_captcha_enabled` setting — swapping in a real
+        // provider is this one binding.
+        $this->app->bind(CaptchaVerifier::class, NullCaptchaVerifier::class);
 
         // WebPush::__construct eagerly validates the 'VAPID' auth entry if
         // present at all, so an unconfigured local/test env (empty keys)
@@ -166,6 +178,7 @@ class AppServiceProvider extends ServiceProvider
         // NotificationDispatcher (per-channel try/catch isolation).
         Event::listen(BookingCreated::class, SendBookingCreatedNotification::class);
         Event::listen(BookingStatusChanged::class, SendBookingStatusNotifications::class);
+        Event::listen(GuestBookingTokenIssued::class, SendGuestBookingTrackingLink::class);
         Event::listen(QuotationSent::class, SendQuotationSentNotification::class);
         Event::listen(QuotationAccepted::class, SendQuotationAcceptedNotification::class);
         Event::listen(QuotationRejected::class, SendQuotationRejectedNotification::class);
@@ -211,6 +224,39 @@ class AppServiceProvider extends ServiceProvider
             $identifier = (string) $request->input('email', '');
 
             return Limit::perMinute(10)->by($request->ip().'|'.$identifier);
+        });
+
+        // SRS §6.1 "Abuse controls": guest booking creation and lookup are
+        // the platform's only unauthenticated write surface. Limited on
+        // *both* axes at once — an abuser rotating emails from one IP and
+        // one rotating IPs against one email are different attacks, and a
+        // single limit would only stop one of them. Authenticated callers
+        // hitting the same route are exempt; they're already covered by the
+        // general API limiter and their own account.
+        //
+        // Both limits live in platform_settings, not constants, so they can
+        // be tightened during an incident without a deploy.
+        RateLimiter::for('guest-booking', function (Request $request) {
+            if ($request->user('sanctum') !== null) {
+                return Limit::none();
+            }
+
+            $settings = $this->app->make(SettingsRepository::class);
+            $perIp = (int) $settings->get('guest.rate_limit_per_ip_per_hour', 10);
+            $perEmail = (int) $settings->get('guest.rate_limit_per_email_per_hour', 5);
+
+            $email = (string) ($request->input('guest_email') ?? $request->input('email') ?? '');
+            $normalized = $email === '' ? '' : BookingActor::normalizeEmail($email);
+
+            $limits = [
+                Limit::perHour($perIp)->by('guest-booking:ip:'.$request->ip()),
+            ];
+
+            if ($normalized !== '') {
+                $limits[] = Limit::perHour($perEmail)->by('guest-booking:email:'.hash('sha256', $normalized));
+            }
+
+            return $limits;
         });
 
         // Short, stable aliases for polymorphic *_type columns (payable_type,

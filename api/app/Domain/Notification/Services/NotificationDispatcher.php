@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Notification\Services;
 
 use App\Domain\Notification\Contracts\ChannelResolvable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
@@ -42,7 +43,10 @@ class NotificationDispatcher
                     Log::error('Notification channel failed', [
                         'channel' => is_string($channel) ? $channel : $channel::class,
                         'notification' => $notification::class,
-                        'notifiable_id' => $notifiable->getKey() ?? null,
+                        // An AnonymousNotifiable (guest mail recipient,
+                        // SRS §6.1) has no key — and its routes hold a raw
+                        // email, which must never reach a log line.
+                        'notifiable_id' => $notifiable instanceof Model ? $notifiable->getKey() : null,
                         'exception' => $e->getMessage(),
                     ]);
                 }

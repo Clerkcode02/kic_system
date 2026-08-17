@@ -767,18 +767,55 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "`BookingResource`",
+                        "description": "The plaintext lives in this response body and in the tracking\nemail, and nowhere else \u2014 it is never stored, re-derivable, or\nlogged (CLAUDE.md \u00a72).\n\n\n\n`GuestBookingResource`\n\n`BookingResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/BookingResource"
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "$ref": "#/components/schemas/GuestBookingResource"
+                                                },
+                                                "meta": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "access_token": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "access_token"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "data",
+                                                "meta"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "allOf": [
+                                                        {
+                                                            "$ref": "#/components/schemas/BookingResource"
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "status_history"
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
                                         }
-                                    },
-                                    "required": [
-                                        "data"
                                     ]
                                 }
                             }
@@ -790,7 +827,8 @@
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
                     }
-                }
+                },
+                "security": []
             }
         },
         "/v1/bookings/{booking}": {
@@ -4223,6 +4261,340 @@
                 }
             }
         },
+        "/v1/guest/bookings/{bookingNumber}": {
+            "get": {
+                "operationId": "guest.bookings.show",
+                "tags": [
+                    "GuestBooking"
+                ],
+                "parameters": [
+                    {
+                        "name": "bookingNumber",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`GuestBookingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/GuestBookingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bookingToken": []
+                    }
+                ]
+            }
+        },
+        "/v1/guest/bookings/{bookingNumber}/cancel": {
+            "patch": {
+                "operationId": "guest.bookings.cancel",
+                "tags": [
+                    "GuestBooking"
+                ],
+                "parameters": [
+                    {
+                        "name": "bookingNumber",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CancelGuestBookingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`GuestBookingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/GuestBookingResource"
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "cancellation_fee_applied": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "cancellation_fee_applied"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "bookingToken": []
+                    }
+                ]
+            }
+        },
+        "/v1/guest/bookings/lookup": {
+            "post": {
+                "operationId": "guest.bookings.lookup",
+                "tags": [
+                    "GuestBookingLookup"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LookupGuestBookingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "If a booking matches those details, a tracking link has been emailed to it."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/v1/guest/payments/intents": {
+            "post": {
+                "operationId": "guest.payments.intents.store",
+                "tags": [
+                    "GuestPaymentIntent"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "`PaymentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PaymentResource"
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "client_secret": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "client_secret"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bookingToken": []
+                    }
+                ]
+            }
+        },
+        "/v1/guest/quotations/{quotation}/accept": {
+            "post": {
+                "operationId": "guest.quotations.accept",
+                "tags": [
+                    "GuestQuotation"
+                ],
+                "parameters": [
+                    {
+                        "name": "quotation",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`GuestBookingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/GuestBookingResource"
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "payment": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "client_secret": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "amount": {
+                                                            "type": "string"
+                                                        },
+                                                        "currency": {
+                                                            "type": "string"
+                                                        },
+                                                        "status": {
+                                                            "$ref": "#/components/schemas/PaymentStatus"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "client_secret",
+                                                        "amount",
+                                                        "currency",
+                                                        "status"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "payment"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bookingToken": []
+                    }
+                ]
+            }
+        },
+        "/v1/guest/quotations/{quotation}/reject": {
+            "post": {
+                "operationId": "guest.quotations.reject",
+                "tags": [
+                    "GuestQuotation"
+                ],
+                "parameters": [
+                    {
+                        "name": "quotation",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RejectGuestQuotationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`GuestBookingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/GuestBookingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "bookingToken": []
+                    }
+                ]
+            }
+        },
         "/v1/proposals/{proposal}/hire": {
             "post": {
                 "operationId": "proposals.hire",
@@ -7386,6 +7758,12 @@
     },
     "components": {
         "securitySchemes": {
+            "bookingToken": {
+                "type": "apiKey",
+                "description": "A guest booking access token (SRS \u00a76.1). Issued once when a guest booking is created and emailed as a tracking link; only its sha256 is stored server-side. Scoped to a single booking \u2014 presenting it for any other booking, or after it expires or is revoked by an account claim, returns 404 (never 403).",
+                "in": "header",
+                "name": "X-Booking-Token"
+            },
             "http": {
                 "type": "http",
                 "scheme": "bearer"
@@ -7837,21 +8215,78 @@
                     },
                     "customer": {
                         "type": "object",
+                        "description": "A guest booking has no customer row (SRS \u00a76.1) \u2014 the contact\naccessors give one shape for both actor kinds without any\ncaller branching on customer_id.",
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
                             },
                             "name": {
                                 "type": "string"
+                            },
+                            "is_guest": {
+                                "type": "boolean"
                             }
                         },
                         "required": [
                             "id",
-                            "name"
+                            "name",
+                            "is_guest"
                         ]
                     },
                     "address": {
-                        "$ref": "#/components/schemas/AddressResource"
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/AddressResource"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "service_address": {
+                        "type": "object",
+                        "properties": {
+                            "line1": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "line2": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "city": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "province": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "postal_code": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "line1",
+                            "line2",
+                            "city",
+                            "province",
+                            "postal_code"
+                        ]
                     },
                     "status_history": {
                         "type": "array",
@@ -7899,6 +8334,7 @@
                     "service",
                     "provider",
                     "customer",
+                    "service_address",
                     "created_at",
                     "updated_at"
                 ],
@@ -8338,6 +8774,21 @@
                     }
                 },
                 "title": "CancelBookingRequest"
+            },
+            "CancelGuestBookingRequest": {
+                "type": "object",
+                "description": "Authorization for guest routes lives entirely in `ResolveBookingActor`\n(SRS \u00a76.1) \u2014 by the time a FormRequest runs, the booking has already been\nresolved from the token or the request 404'd. There is no second\nownership check to make here.",
+                "properties": {
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "CancelBooking::handle() is the source of truth for when a\nreason is mandatory (provider-initiated cancellations), which\na guest never is \u2014 so it stays optional here.",
+                        "maxLength": 500
+                    }
+                },
+                "title": "CancelGuestBookingRequest"
             },
             "CategoryResource": {
                 "type": "object",
@@ -8888,6 +9339,197 @@
                 ],
                 "title": "FreelancerVerificationResource"
             },
+            "GuestBookingResource": {
+                "type": "object",
+                "properties": {
+                    "booking_number": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "payment_status": {
+                        "type": "string"
+                    },
+                    "scheduled_date": {
+                        "type": "string"
+                    },
+                    "time_slot_start": {
+                        "type": "string"
+                    },
+                    "time_slot_end": {
+                        "type": "string"
+                    },
+                    "notes": {
+                        "type": "string"
+                    },
+                    "service": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "pricing_type": {
+                                "type": "string"
+                            },
+                            "base_price": {
+                                "type": "string"
+                            },
+                            "currency": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "pricing_type",
+                            "base_price",
+                            "currency"
+                        ]
+                    },
+                    "provider": {
+                        "type": "object",
+                        "properties": {
+                            "display_name": {
+                                "type": "string",
+                                "description": "Display name only \u2014 no owner name, email, phone, address\nor Connect account details."
+                            },
+                            "rating_avg": {
+                                "type": "number"
+                            }
+                        },
+                        "required": [
+                            "display_name",
+                            "rating_avg"
+                        ]
+                    },
+                    "service_address": {
+                        "type": "object",
+                        "properties": {
+                            "line1": {
+                                "type": "string"
+                            },
+                            "line2": {
+                                "type": "string"
+                            },
+                            "city": {
+                                "type": "string"
+                            },
+                            "province": {
+                                "type": "string"
+                            },
+                            "postal_code": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "line1",
+                            "line2",
+                            "city",
+                            "province",
+                            "postal_code"
+                        ]
+                    },
+                    "quotation": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "description": "Needed to address POST /guest/quotations/{id}/accept|reject;\nit is token-guarded, so it is a capability the holder already\nhas rather than an extra disclosure."
+                            },
+                            "labor_cost": {
+                                "type": "string"
+                            },
+                            "materials_cost": {
+                                "type": "string"
+                            },
+                            "additional_fees": {
+                                "type": "string"
+                            },
+                            "platform_fee": {
+                                "type": "string"
+                            },
+                            "tax_amount": {
+                                "type": "string"
+                            },
+                            "discount_amount": {
+                                "type": "string"
+                            },
+                            "total_amount": {
+                                "type": "string"
+                            },
+                            "deposit_percentage": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "currency": {
+                                "type": "string"
+                            },
+                            "valid_until": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "revision_number": {
+                                "type": "integer"
+                            },
+                            "status": {
+                                "$ref": "#/components/schemas/QuotationStatus"
+                            },
+                            "line_items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "labor_cost",
+                            "materials_cost",
+                            "additional_fees",
+                            "platform_fee",
+                            "tax_amount",
+                            "discount_amount",
+                            "total_amount",
+                            "deposit_percentage",
+                            "currency",
+                            "valid_until",
+                            "revision_number",
+                            "status",
+                            "line_items"
+                        ]
+                    },
+                    "timeline": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "booking_number",
+                    "status",
+                    "payment_status",
+                    "scheduled_date",
+                    "time_slot_start",
+                    "time_slot_end",
+                    "notes",
+                    "service",
+                    "provider",
+                    "service_address",
+                    "quotation",
+                    "timeline",
+                    "created_at"
+                ],
+                "title": "GuestBookingResource"
+            },
             "LoginRequest": {
                 "type": "object",
                 "properties": {
@@ -8904,6 +9546,26 @@
                     "password"
                 ],
                 "title": "LoginRequest"
+            },
+            "LookupGuestBookingRequest": {
+                "type": "object",
+                "description": "SRS \u00a76.1: the lookup response must be identical for real and fake booking\nnumbers, so validation here is strictly about *shape* \u2014 never about\nexistence. No `exists:` rule, no per-field message that would let a\ncaller distinguish \"that booking number is wrong\" from \"that email is\".",
+                "properties": {
+                    "booking_number": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "booking_number",
+                    "email"
+                ],
+                "title": "LookupGuestBookingRequest"
             },
             "MilestoneResource": {
                 "type": "object",
@@ -10063,6 +10725,20 @@
                 ],
                 "title": "RejectFreelancerVerificationRequest"
             },
+            "RejectGuestQuotationRequest": {
+                "type": "object",
+                "description": "See {@see CancelGuestBookingRequest} \u2014 authorization is the token, checked\nby `ResolveBookingActor` before this runs.",
+                "properties": {
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    }
+                },
+                "title": "RejectGuestQuotationRequest"
+            },
             "RejectMilestoneRequest": {
                 "type": "object",
                 "properties": {
@@ -10669,6 +11345,7 @@
             },
             "StoreBookingRequest": {
                 "type": "object",
+                "description": "One endpoint, two actor kinds (SRS \u00a76.1). An authenticated caller books\nas themselves; anyone else books as a guest and must supply the contact\ntriple. Sending guest fields *as* an authenticated user is a 422, not a\nsilently-ignored field \u2014 the two shapes are mutually exclusive, mirroring\nthe `bookings_exactly_one_actor` CHECK constraint.",
                 "properties": {
                     "service_id": {
                         "type": "string",
@@ -10676,7 +11353,60 @@
                     },
                     "address_id": {
                         "type": "string",
-                        "format": "uuid"
+                        "format": "uuid",
+                        "description": "Saved addresses are a registered-user feature; a guest has no\naddresses row and must supply the address inline."
+                    },
+                    "service_address": {
+                        "type": "object",
+                        "properties": {
+                            "line1": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "line2": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 255
+                            },
+                            "city": {
+                                "type": "string",
+                                "maxLength": 120
+                            },
+                            "province": {
+                                "type": "string",
+                                "enum": [
+                                    "AB",
+                                    "BC",
+                                    "MB",
+                                    "NB",
+                                    "NL",
+                                    "NS",
+                                    "NT",
+                                    "NU",
+                                    "ON",
+                                    "PE",
+                                    "QC",
+                                    "SK",
+                                    "YT"
+                                ]
+                            },
+                            "postal_code": {
+                                "type": "string",
+                                "pattern": "^[ABCEGHJ-NPRSTVXY]\\d[ABCEGHJ-NPRSTV-Z][ -]?\\d[ABCEGHJ-NPRSTV-Z]\\d$"
+                            },
+                            "lat": {
+                                "type": "number",
+                                "minimum": 41,
+                                "maximum": 84
+                            },
+                            "lng": {
+                                "type": "number",
+                                "minimum": -142,
+                                "maximum": -52
+                            }
+                        }
                     },
                     "scheduled_date": {
                         "type": "string",
@@ -10695,14 +11425,39 @@
                             "null"
                         ],
                         "maxLength": 1000
+                    },
+                    "guest_name": {
+                        "type": "string",
+                        "description": "Guest contact triple \u2014 required together for an anonymous\ncaller, prohibited outright for an authenticated one.",
+                        "maxLength": 120
+                    },
+                    "guest_email": {
+                        "type": "string",
+                        "format": "email",
+                        "description": "Plain `email`, matching every other email field in the app.\nNot `dns`: a guest's tracking link is their only way back to\nthe booking, and a DNS lookup failing at submit time would\nreject a legitimate booking over a transient resolver issue.",
+                        "maxLength": 255
+                    },
+                    "guest_phone": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "captcha_token": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 4096
                     }
                 },
                 "required": [
                     "service_id",
-                    "address_id",
+                    "service_address",
                     "scheduled_date",
                     "time_slot_start",
-                    "time_slot_end"
+                    "time_slot_end",
+                    "guest_name",
+                    "guest_email",
+                    "guest_phone"
                 ],
                 "title": "StoreBookingRequest"
             },

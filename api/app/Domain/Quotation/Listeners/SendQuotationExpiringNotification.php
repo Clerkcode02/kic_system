@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Quotation\Listeners;
 
+use App\Domain\Notification\Services\BookingNotifiableResolver;
 use App\Domain\Notification\Services\NotificationDispatcher;
 use App\Domain\Quotation\Events\QuotationExpiryReminderDue;
 use App\Domain\Quotation\Notifications\QuotationExpiringNotification;
@@ -13,13 +14,18 @@ class SendQuotationExpiringNotification implements ShouldQueue
 {
     public string $queue = 'notifications';
 
-    public function __construct(private readonly NotificationDispatcher $dispatcher)
-    {
+    public function __construct(
+        private readonly NotificationDispatcher $dispatcher,
+        private readonly BookingNotifiableResolver $notifiables,
+    ) {
     }
 
     public function handle(QuotationExpiryReminderDue $event): void
     {
-        $customer = $event->quotation->booking?->customer;
+        $booking = $event->quotation->booking;
+
+        // Guest customers get the same reminder by mail (SRS §6.1).
+        $customer = $booking === null ? null : $this->notifiables->forCustomer($booking);
 
         if ($customer === null) {
             return;

@@ -15,6 +15,7 @@ use App\Domain\User\Models\User;
 use App\Support\Action;
 use App\Support\Facades\Settings;
 use App\Support\PaymentsBlockedException;
+use App\Support\ValueObjects\BookingActor;
 use App\Support\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
 
@@ -64,7 +65,7 @@ final class ReviseQuotation implements Action
             // revising a still-Sent quote (before the customer decided) needs
             // that hop done here first — only legal from WaitingForCustomer.
             if ($booking->status !== BookingStatus::WaitingForQuotation) {
-                $booking = $this->transition->handle($booking, BookingStatus::WaitingForQuotation, $actor, 'Provider is revising the quotation.');
+                $booking = $this->transition->handle($booking, BookingStatus::WaitingForQuotation, BookingActor::user($actor), 'Provider is revising the quotation.');
             }
 
             $currency = $previous->currency;
@@ -108,8 +109,8 @@ final class ReviseQuotation implements Action
                 ]);
             }
 
-            $booking = $this->transition->handle($booking, BookingStatus::QuotationSent, $actor, 'Provider sent a revised quotation.');
-            $this->transition->handle($booking, BookingStatus::WaitingForCustomer, $actor, 'Awaiting customer response.');
+            $booking = $this->transition->handle($booking, BookingStatus::QuotationSent, BookingActor::user($actor), 'Provider sent a revised quotation.');
+            $this->transition->handle($booking, BookingStatus::WaitingForCustomer, BookingActor::user($actor), 'Awaiting customer response.');
 
             QuotationRevised::dispatch($quotation, $previous->fresh(), $actor);
 

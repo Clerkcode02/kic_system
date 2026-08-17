@@ -18,6 +18,10 @@ it('implements Auditable on every event representing a critical, auditable actio
         // Booking
         \App\Domain\Booking\Events\BookingCreated::class,
         \App\Domain\Booking\Events\BookingStatusChanged::class,
+        // Guest booking (SRS §6.1) — claiming transfers ownership of paid
+        // transactions to an account, so it is audited. Token issuance
+        // deliberately is not; see GuestBookingTokenIssued.
+        \App\Domain\Booking\Events\GuestBookingsClaimed::class,
         // Quotation
         \App\Domain\Quotation\Events\QuotationSent::class,
         \App\Domain\Quotation\Events\QuotationAccepted::class,

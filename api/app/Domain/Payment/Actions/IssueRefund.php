@@ -20,6 +20,7 @@ use App\Support\Action;
 use App\Support\ConflictException;
 use App\Support\Facades\Settings;
 use App\Support\PaymentsBlockedException;
+use App\Support\ValueObjects\BookingActor;
 use App\Support\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -107,7 +108,7 @@ final class IssueRefund implements Action
         // keeps its current status; payment_status above is the source of
         // truth for "this booking's money came back" in that case.
         if ($booking->status === BookingStatus::Completed) {
-            $this->bookingTransition->handle($booking, BookingStatus::Refunded, $actor, $reason ?? 'Refund issued by admin.');
+            $this->bookingTransition->handle($booking, BookingStatus::Refunded, BookingActor::user($actor), $reason ?? 'Refund issued by admin.');
         }
     }
 

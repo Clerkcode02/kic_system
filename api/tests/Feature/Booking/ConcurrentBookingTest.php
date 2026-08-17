@@ -12,8 +12,10 @@ use App\Domain\Catalog\Models\Service;
 use App\Domain\User\Enums\RoleName;
 use App\Domain\User\Models\Address;
 use App\Domain\User\Models\User;
+use App\Support\ValueObjects\BookingActor;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * DoubleBookingValidator's guard only proves itself under a genuine race
@@ -57,7 +59,16 @@ it('lets exactly one of two truly concurrent requests for the same slot succeed'
     // pinned inactive — ServiceFactory would otherwise spin up its own
     // *active* top-level Category by default, permanently leaking into
     // any other test's unscoped "all active categories" query.
-    $category = Category::factory()->create(['is_active' => false]);
+    // The slug is explicitly unique, not factory-generated: CategoryFactory
+    // derives it from `fake()->unique()->words(2)`, whose uniqueness
+    // register resets every test, so this permanently-committed row would
+    // otherwise be able to collide with a slug a later test generates and
+    // fail that unrelated test on `categories.slug`.
+    $category = Category::factory()->create([
+        'is_active' => false,
+        'name' => 'Concurrent Fixture '.Str::uuid7(),
+        'slug' => 'concurrent-fixture-'.Str::uuid7(),
+    ]);
     $service = Service::factory()->create([
         'business_id' => $business->id,
         'category_id' => $category->id,
@@ -142,7 +153,7 @@ function attemptConcurrentBooking(string $customerId, array $data, string $resul
 
     try {
         $customer = User::query()->findOrFail($customerId);
-        $booking = app(CreateBookingRequest::class)->handle($customer, $data);
+        $booking = app(CreateBookingRequest::class)->handle(BookingActor::user($customer), $data);
         file_put_contents($resultFile, json_encode(['outcome' => 'succeeded', 'booking_id' => $booking->id]));
     } catch (\Illuminate\Validation\ValidationException) {
         file_put_contents($resultFile, json_encode(['outcome' => 'failed']));

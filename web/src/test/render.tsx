@@ -2,6 +2,15 @@ import type { ReactElement, ReactNode } from 'react'
 import { render, type RenderOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from '@/app/providers/AuthProvider'
+
+/**
+ * AuthProvider is part of the stack because components branch on actor kind
+ * (SRS §6.1) — the booking wizard, for one, renders a different set of steps
+ * for a guest than for a signed-in customer. Auth state comes from the
+ * mocked `/auth/me`: the default handler 401s (the normal anonymous state),
+ * and a test opts into a session by overriding that handler.
+ */
 
 /**
  * A fresh QueryClient per render — retries/caching would otherwise leak
@@ -31,11 +40,13 @@ export function renderWithProviders(
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={[route]}>
-          <Routes>
-            <Route path={path} element={children} />
-          </Routes>
-        </MemoryRouter>
+        <AuthProvider>
+          <MemoryRouter initialEntries={[route]}>
+            <Routes>
+              <Route path={path} element={children} />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
       </QueryClientProvider>
     )
   }

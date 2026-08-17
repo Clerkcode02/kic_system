@@ -71,7 +71,7 @@ export function ServiceMapView({ services, center }: ServiceMapViewProps) {
                 <p className="font-semibold">{service.title}</p>
                 <p className="text-xs text-gray-500">{service.business.legal_name}</p>
                 <Link
-                  to={`/customer/services/${service.id}`}
+                  to={`/services/${service.id}`}
                   className="text-sm text-blue-600 underline"
                 >
                   View service

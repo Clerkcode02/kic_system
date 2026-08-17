@@ -820,6 +820,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/guest/bookings/{bookingNumber}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["guest.bookings.show"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guest/bookings/{bookingNumber}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["guest.bookings.cancel"];
+        trace?: never;
+    };
+    "/v1/guest/bookings/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["guest.bookings.lookup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guest/payments/intents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["guest.payments.intents.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guest/quotations/{quotation}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["guest.quotations.accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guest/quotations/{quotation}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["guest.quotations.reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/proposals/{proposal}/hire": {
         parameters: {
             query?: never;
@@ -1679,11 +1775,24 @@ export interface components {
                 legal_name: string;
                 rating_avg: number;
             };
+            /**
+             * @description A guest booking has no customer row (SRS §6.1) — the contact
+             *     accessors give one shape for both actor kinds without any
+             *     caller branching on customer_id.
+             */
             customer: {
-                id: string;
+                id: string | null;
                 name: string;
+                is_guest: boolean;
             };
-            address?: components["schemas"]["AddressResource"];
+            address?: components["schemas"]["AddressResource"] | null;
+            service_address: {
+                line1: string | null;
+                line2: string | null;
+                city: string | null;
+                province: string | null;
+                postal_code: string | null;
+            };
             status_history?: components["schemas"]["BookingStatusHistoryResource"][];
             attachments?: components["schemas"]["BookingAttachmentResource"][];
             quotations?: components["schemas"]["QuotationResource"][];
@@ -1807,6 +1916,21 @@ export interface components {
              * @description CancelBooking::handle() is the source of truth for "required
              *      when the actor is the provider" — the FormRequest can't know
              *     which side of the booking is calling until the Action checks.
+             */
+            reason?: string | null;
+        };
+        /**
+         * CancelGuestBookingRequest
+         * @description Authorization for guest routes lives entirely in `ResolveBookingActor`
+         *     (SRS §6.1) — by the time a FormRequest runs, the booking has already been
+         *     resolved from the token or the request 404'd. There is no second
+         *     ownership check to make here.
+         */
+        CancelGuestBookingRequest: {
+            /**
+             * @description CancelBooking::handle() is the source of truth for when a
+             *     reason is mandatory (provider-initiated cancellations), which
+             *     a guest never is — so it stays optional here.
              */
             reason?: string | null;
         };
@@ -1955,11 +2079,78 @@ export interface components {
             /** Format: date-time */
             created_at: string | null;
         };
+        /** GuestBookingResource */
+        GuestBookingResource: {
+            booking_number: string;
+            status: string;
+            payment_status: string;
+            scheduled_date: string;
+            time_slot_start: string;
+            time_slot_end: string;
+            notes: string;
+            service: {
+                title: string;
+                pricing_type: string;
+                base_price: string;
+                currency: string;
+            };
+            provider: {
+                /**
+                 * @description Display name only — no owner name, email, phone, address
+                 *     or Connect account details.
+                 */
+                display_name: string;
+                rating_avg: number;
+            };
+            service_address: {
+                line1: string;
+                line2: string;
+                city: string;
+                province: string;
+                postal_code: string;
+            };
+            quotation: {
+                /**
+                 * @description Needed to address POST /guest/quotations/{id}/accept|reject;
+                 *     it is token-guarded, so it is a capability the holder already
+                 *     has rather than an extra disclosure.
+                 */
+                id: string;
+                labor_cost: string;
+                materials_cost: string;
+                additional_fees: string;
+                platform_fee: string;
+                tax_amount: string;
+                discount_amount: string;
+                total_amount: string;
+                deposit_percentage: string | null;
+                currency: string;
+                /** Format: date-time */
+                valid_until: string;
+                revision_number: number;
+                status: components["schemas"]["QuotationStatus"];
+                line_items: string[];
+            } | null;
+            timeline: string[];
+            created_at: string;
+        };
         /** LoginRequest */
         LoginRequest: {
             /** Format: email */
             email: string;
             password: string;
+        };
+        /**
+         * LookupGuestBookingRequest
+         * @description SRS §6.1: the lookup response must be identical for real and fake booking
+         *     numbers, so validation here is strictly about *shape* — never about
+         *     existence. No `exists:` rule, no per-field message that would let a
+         *     caller distinguish "that booking number is wrong" from "that email is".
+         */
+        LookupGuestBookingRequest: {
+            booking_number: string;
+            /** Format: email */
+            email: string;
         };
         /** MilestoneResource */
         MilestoneResource: {
@@ -2285,6 +2476,14 @@ export interface components {
         RejectFreelancerVerificationRequest: {
             reason: string;
         };
+        /**
+         * RejectGuestQuotationRequest
+         * @description See {@see CancelGuestBookingRequest} — authorization is the token, checked
+         *     by `ResolveBookingActor` before this runs.
+         */
+        RejectGuestQuotationRequest: {
+            reason?: string | null;
+        };
         /** RejectMilestoneRequest */
         RejectMilestoneRequest: {
             reason: string;
@@ -2447,12 +2646,33 @@ export interface components {
             lng: number;
             is_default?: boolean;
         };
-        /** StoreBookingRequest */
+        /**
+         * StoreBookingRequest
+         * @description One endpoint, two actor kinds (SRS §6.1). An authenticated caller books
+         *     as themselves; anyone else books as a guest and must supply the contact
+         *     triple. Sending guest fields *as* an authenticated user is a 422, not a
+         *     silently-ignored field — the two shapes are mutually exclusive, mirroring
+         *     the `bookings_exactly_one_actor` CHECK constraint.
+         */
         StoreBookingRequest: {
             /** Format: uuid */
             service_id: string;
-            /** Format: uuid */
-            address_id: string;
+            /**
+             * Format: uuid
+             * @description Saved addresses are a registered-user feature; a guest has no
+             *     addresses row and must supply the address inline.
+             */
+            address_id?: string;
+            service_address: {
+                line1?: string;
+                line2?: string | null;
+                city?: string;
+                /** @enum {string} */
+                province?: "AB" | "BC" | "MB" | "NB" | "NL" | "NS" | "NT" | "NU" | "ON" | "PE" | "QC" | "SK" | "YT";
+                postal_code?: string;
+                lat?: number;
+                lng?: number;
+            };
             /**
              * Format: date-time
              * @description Mirrors CreateBookingRequest::assertNotInThePast — the Action
@@ -2463,6 +2683,21 @@ export interface components {
             time_slot_start: string;
             time_slot_end: string;
             notes?: string | null;
+            /**
+             * @description Guest contact triple — required together for an anonymous
+             *     caller, prohibited outright for an authenticated one.
+             */
+            guest_name: string;
+            /**
+             * Format: email
+             * @description Plain `email`, matching every other email field in the app.
+             *     Not `dns`: a guest's tracking link is their only way back to
+             *     the booking, and a DNS lookup failing at submit time would
+             *     reject a legitimate booking over a transient resolver issue.
+             */
+            guest_email: string;
+            guest_phone: string;
+            captcha_token?: string | null;
         };
         /** StoreBookingReviewRequest */
         StoreBookingReviewRequest: {
@@ -3080,14 +3315,29 @@ export interface operations {
             };
         };
         responses: {
-            /** @description `BookingResource` */
+            /**
+             * @description The plaintext lives in this response body and in the tracking
+             *     email, and nowhere else — it is never stored, re-derivable, or
+             *     logged (CLAUDE.md §2).
+             *
+             *
+             *
+             *     `GuestBookingResource`
+             *
+             *     `BookingResource`
+             */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["BookingResource"];
+                        data: components["schemas"]["GuestBookingResource"];
+                        meta: {
+                            access_token: string;
+                        };
+                    } | {
+                        data: components["schemas"]["BookingResource"] & Record<string, never>;
                     };
                 };
             };
@@ -4838,6 +5088,175 @@ export interface operations {
                 };
             };
             404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "guest.bookings.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookingNumber: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `GuestBookingResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["GuestBookingResource"];
+                    };
+                };
+            };
+        };
+    };
+    "guest.bookings.cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookingNumber: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CancelGuestBookingRequest"];
+            };
+        };
+        responses: {
+            /** @description `GuestBookingResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["GuestBookingResource"];
+                        meta: {
+                            cancellation_fee_applied: boolean;
+                        };
+                    };
+                };
+            };
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "guest.bookings.lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LookupGuestBookingRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        message: "If a booking matches those details, a tracking link has been emailed to it.";
+                    };
+                };
+            };
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "guest.payments.intents.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `PaymentResource` */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PaymentResource"];
+                        meta: {
+                            client_secret: string | null;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    "guest.quotations.accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quotation: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `GuestBookingResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["GuestBookingResource"];
+                        meta: {
+                            payment: {
+                                client_secret: string | null;
+                                amount: string;
+                                currency: string;
+                                status: components["schemas"]["PaymentStatus"];
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
+    "guest.quotations.reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quotation: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RejectGuestQuotationRequest"];
+            };
+        };
+        responses: {
+            /** @description `GuestBookingResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["GuestBookingResource"];
+                    };
+                };
+            };
+            422: components["responses"]["ValidationException"];
         };
     };
     "proposals.hire": {

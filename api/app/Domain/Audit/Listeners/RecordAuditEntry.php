@@ -6,6 +6,7 @@ namespace App\Domain\Audit\Listeners;
 
 use App\Domain\Audit\Models\AuditLog;
 use App\Support\Auditable;
+use App\Support\LabelsAuditActor;
 use Illuminate\Http\Request;
 
 /**
@@ -24,6 +25,9 @@ final class RecordAuditEntry
     {
         AuditLog::create([
             'actor_id' => $event->auditActorId(),
+            // Guest actors have no users row to point actor_id at; those
+            // events opt into a hashed label instead (SRS §13).
+            'actor_label' => $event instanceof LabelsAuditActor ? $event->auditActorLabel() : null,
             'action' => $event->auditAction(),
             'auditable_type' => $event->auditableType(),
             'auditable_id' => $event->auditableId(),

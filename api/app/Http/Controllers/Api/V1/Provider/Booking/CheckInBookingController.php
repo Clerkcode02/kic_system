@@ -10,12 +10,13 @@ use App\Domain\Booking\Models\Booking;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\CheckInBookingRequest;
 use App\Http\Resources\BookingResource;
+use App\Support\ValueObjects\BookingActor;
 
 class CheckInBookingController extends Controller
 {
     public function __invoke(CheckInBookingRequest $request, Booking $booking, TransitionBookingStatus $action): BookingResource
     {
-        $booking = $action->handle($booking, BookingStatus::InProgress, $request->user(), 'Provider checked in.');
+        $booking = $action->handle($booking, BookingStatus::InProgress, BookingActor::user($request->user()), 'Provider checked in.');
 
         return new BookingResource($booking);
     }
