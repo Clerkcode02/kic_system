@@ -6345,17 +6345,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "allOf": [
-                                                {
-                                                    "$ref": "#/components/schemas/ServiceResource"
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "pricing_tiers"
-                                                    ]
-                                                }
-                                            ]
+                                            "$ref": "#/components/schemas/ServiceResource"
                                         }
                                     },
                                     "required": [
@@ -6394,17 +6384,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "allOf": [
-                                                {
-                                                    "$ref": "#/components/schemas/ServicePricingResource"
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "pricing_tiers"
-                                                    ]
-                                                }
-                                            ]
+                                            "$ref": "#/components/schemas/ServicePricingResource"
                                         }
                                     },
                                     "required": [
