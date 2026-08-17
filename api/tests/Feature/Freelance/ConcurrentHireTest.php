@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domain\Catalog\Models\Category;
 use App\Domain\Freelance\Actions\HireFreelancer;
 use App\Domain\Freelance\Enums\ProjectStatus;
 use App\Domain\Freelance\Enums\ProposalStatus;
+use App\Domain\Freelance\Models\Contract;
 use App\Domain\Freelance\Models\FreelancerProfile;
 use App\Domain\Freelance\Models\Project;
 use App\Domain\Freelance\Models\Proposal;
@@ -92,16 +94,34 @@ it('lets exactly one of two truly concurrent hire requests for the same project 
     $outcomes = [$outcomeA, $outcomeB];
     sort($outcomes);
 
-    expect($outcomes)->toBe(['failed', 'succeeded']);
-    expect($project->fresh()->status)->toBe(ProjectStatus::InProgress);
-    expect(\App\Domain\Freelance\Models\Contract::query()->where('project_id', $project->id)->count())->toBe(1);
+    try {
+        expect($outcomes)->toBe(['failed', 'succeeded']);
+        expect($project->fresh()->status)->toBe(ProjectStatus::InProgress);
+        expect(Contract::query()->where('project_id', $project->id)->count())->toBe(1);
 
-    // sort() has no defined ordering for backed-enum instances (they're
-    // not Comparable) — sort by the underlying value instead, which is
-    // what "Accepted, Rejected" actually means here.
-    $statuses = [$proposalA->fresh()->status, $proposalB->fresh()->status];
-    usort($statuses, fn (ProposalStatus $a, ProposalStatus $b) => $a->value <=> $b->value);
-    expect($statuses)->toBe([ProposalStatus::Accepted, ProposalStatus::Rejected]);
+        // sort() has no defined ordering for backed-enum instances (they're
+        // not Comparable) — sort by the underlying value instead, which is
+        // what "Accepted, Rejected" actually means here.
+        $statuses = [$proposalA->fresh()->status, $proposalB->fresh()->status];
+        usort($statuses, fn (ProposalStatus $a, ProposalStatus $b) => $a->value <=> $b->value);
+        expect($statuses)->toBe([ProposalStatus::Accepted, ProposalStatus::Rejected]);
+    } finally {
+        // This test forks real committed rows outside RefreshDatabase (see
+        // the class comment) — without explicit cleanup they'd permanently
+        // leak into every test that runs later in the same process and
+        // counts categories/freelancers/projects (e.g. admin list/analytics
+        // endpoints), making those tests fail depending on run order.
+        $categoryId = $project->category_id;
+        Contract::query()->where('project_id', $project->id)->delete();
+        Proposal::query()->where('project_id', $project->id)->delete();
+        $project->delete();
+        Category::query()->whereKey($categoryId)->delete();
+        FreelancerProfile::query()->whereKey($profileA->id)->delete();
+        FreelancerProfile::query()->whereKey($profileB->id)->delete();
+        $freelancerA->delete();
+        $freelancerB->delete();
+        $client->delete();
+    }
 });
 
 function attemptConcurrentHire(string $clientId, string $proposalId, string $resultFile): void

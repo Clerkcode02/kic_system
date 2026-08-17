@@ -25,6 +25,7 @@ use App\Policies\CategoryPolicy;
 use App\Policies\ContractPolicy;
 use App\Policies\DisputePolicy;
 use App\Policies\MilestonePolicy;
+use App\Policies\NotificationPolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\PlatformSettingPolicy;
 use App\Policies\ProjectPolicy;
@@ -33,6 +34,7 @@ use App\Policies\QuotationPolicy;
 use App\Policies\ReviewPolicy;
 use App\Policies\ServicePolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Notifications\DatabaseNotification;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -54,6 +56,7 @@ class AuthServiceProvider extends ServiceProvider
         AuditLog::class => AuditLogPolicy::class,
         Payment::class => PaymentPolicy::class,
         PlatformSetting::class => PlatformSettingPolicy::class,
+        DatabaseNotification::class => NotificationPolicy::class,
     ];
 
     public function boot(): void

@@ -5,11 +5,8 @@ declare(strict_types=1);
 use App\Domain\Booking\Enums\BookingStatus;
 use App\Domain\Booking\Models\Booking;
 use App\Domain\Business\Models\Business;
-use App\Domain\Business\Models\ProviderAvailability;
 use App\Domain\Catalog\Enums\ServicePricingType;
-use App\Domain\Catalog\Models\Service;
 use App\Domain\User\Enums\RoleName;
-use App\Domain\User\Models\Address;
 use App\Domain\User\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,61 +17,6 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     $this->seed(RoleAndPermissionSeeder::class);
 });
-
-/**
- * @return array{0: User, 1: Address}
- */
-function bookingCustomer(): array
-{
-    $user = User::factory()->customer()->create();
-    $user->assignRole(RoleName::Customer->value);
-    $address = Address::factory()->for($user, 'user')->create();
-
-    return [$user, $address];
-}
-
-/**
- * @return array{0: User, 1: Business}
- */
-function bookingProvider(int $maxBookingsPerDay = 10): array
-{
-    $user = User::factory()->provider()->create();
-    $user->assignRole(RoleName::ProviderOwner->value);
-    $business = Business::factory()->verified()->payoutsEnabled()->create([
-        'user_id' => $user->id,
-        'max_bookings_per_day' => $maxBookingsPerDay,
-    ]);
-
-    foreach (range(0, 6) as $day) {
-        ProviderAvailability::factory()->create([
-            'business_id' => $business->id,
-            'day_of_week' => $day,
-            'start_time' => '08:00:00',
-            'end_time' => '18:00:00',
-        ]);
-    }
-
-    return [$user, $business];
-}
-
-function bookingService(Business $business, ServicePricingType $pricingType = ServicePricingType::Fixed): Service
-{
-    return Service::factory()->create([
-        'business_id' => $business->id,
-        'pricing_type' => $pricingType,
-        'is_active' => true,
-    ]);
-}
-
-function futureBookingDate(): string
-{
-    return now()->addDays(5)->toDateString();
-}
-
-function authHeader(User $user): array
-{
-    return ['Authorization' => 'Bearer '.$user->createToken('test')->plainTextToken];
-}
 
 // --- Creation & routing rule ---------------------------------------------
 

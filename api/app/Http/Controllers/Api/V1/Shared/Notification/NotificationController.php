@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1\Shared\Notification;
 
 use App\Domain\Notification\Queries\ListNotificationsQuery;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Notification\ReadNotificationRequest;
 use App\Http\Resources\NotificationResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,10 +20,8 @@ class NotificationController extends Controller
         return NotificationResource::collection($query->handle($request->user()));
     }
 
-    public function read(Request $request, DatabaseNotification $notification): NotificationResource
+    public function read(ReadNotificationRequest $request, DatabaseNotification $notification): NotificationResource
     {
-        abort_unless($notification->notifiable_id === $request->user()->id, 403);
-
         if ($notification->read_at === null) {
             $notification->markAsRead();
         }

@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domain\Booking\Enums\BookingStatus;
+use App\Domain\Booking\Models\Booking;
+use App\Domain\Catalog\Enums\ServicePricingType;
 use App\Domain\Dispute\Enums\DisputeStatus;
 use App\Domain\Dispute\Models\Dispute;
 use App\Domain\Freelance\Enums\MilestoneStatus;
@@ -24,6 +27,7 @@ use App\Support\ValueObjects\Money;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -106,6 +110,113 @@ it('lets a party to a milestone raise a dispute, and denies a stranger', functio
             'reason' => 'Unrelated stranger trying to dispute someone else\'s milestone.',
         ])
         ->assertStatus(409);
+});
+
+it('rejects raising a dispute against an entity that does not exist', function () {
+    $client = User::factory()->customer()->create();
+    $client->assignRole(RoleName::Customer->value);
+    $token = $client->createToken('device')->plainTextToken;
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/v1/disputes', [
+            'disputable_type' => 'milestone',
+            'disputable_id' => (string) Str::uuid7(),
+            'reason' => 'This milestone does not exist at all.',
+        ])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('disputable_id');
+});
+
+it('rejects raising a second dispute while one is already open on the same entity', function () {
+    [$milestone, $client] = disputedFundedMilestone();
+
+    Dispute::create([
+        'disputable_type' => 'milestone',
+        'disputable_id' => $milestone->id,
+        'raised_by' => $client->id,
+        'status' => DisputeStatus::Open,
+        'resolution_notes' => 'First dispute on this milestone.',
+    ]);
+
+    $token = $client->createToken('device')->plainTextToken;
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/v1/disputes', [
+            'disputable_type' => 'milestone',
+            'disputable_id' => $milestone->id,
+            'reason' => 'Trying to raise a second dispute on the same milestone.',
+        ])
+        ->assertStatus(409)
+        ->assertJsonPath('code', 'dispute_already_open');
+
+    expect(Dispute::query()->where('disputable_type', 'milestone')->where('disputable_id', $milestone->id)->count())->toBe(1);
+});
+
+it('lets either party to a booking raise a dispute on it, and denies a stranger', function () {
+    [$customer, $address] = bookingCustomer();
+    [$providerUser, $business] = bookingProvider();
+    $service = bookingService($business, ServicePricingType::Fixed);
+
+    $booking = Booking::factory()->create([
+        'customer_id' => $customer->id,
+        'provider_id' => $business->id,
+        'service_id' => $service->id,
+        'address_id' => $address->id,
+        'status' => BookingStatus::Completed,
+    ]);
+
+    $providerToken = $providerUser->createToken('device')->plainTextToken;
+    $this->withHeader('Authorization', "Bearer {$providerToken}")
+        ->postJson('/api/v1/disputes', [
+            'disputable_type' => 'booking',
+            'disputable_id' => $booking->id,
+            'reason' => 'The customer never paid the remainder owed.',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.status', DisputeStatus::Open->value);
+
+    $stranger = User::factory()->customer()->create();
+    $stranger->assignRole(RoleName::Customer->value);
+    $strangerToken = $stranger->createToken('device')->plainTextToken;
+
+    forgetAuthGuards();
+    $this->withHeader('Authorization', "Bearer {$strangerToken}")
+        ->postJson('/api/v1/disputes', [
+            'disputable_type' => 'booking',
+            'disputable_id' => $booking->id,
+            'reason' => 'An unrelated stranger raising a dispute on this booking.',
+        ])
+        ->assertStatus(409)
+        ->assertJsonPath('code', 'not_a_party_to_disputable');
+});
+
+it('lets a client raise a dispute on their own project, and denies a stranger', function () {
+    $client = User::factory()->customer()->create();
+    $client->assignRole(RoleName::Customer->value);
+
+    $project = Project::factory()->inProgress()->create(['client_id' => $client->id]);
+
+    $token = $client->createToken('device')->plainTextToken;
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/v1/disputes', [
+            'disputable_type' => 'project',
+            'disputable_id' => $project->id,
+            'reason' => 'This project engagement has gone sideways.',
+        ])
+        ->assertCreated();
+
+    $stranger = User::factory()->customer()->create();
+    $stranger->assignRole(RoleName::Customer->value);
+    $strangerToken = $stranger->createToken('device')->plainTextToken;
+
+    forgetAuthGuards();
+    $this->withHeader('Authorization', "Bearer {$strangerToken}")
+        ->postJson('/api/v1/disputes', [
+            'disputable_type' => 'project',
+            'disputable_id' => $project->id,
+            'reason' => 'An unrelated stranger raising a dispute on this project.',
+        ])
+        ->assertStatus(409)
+        ->assertJsonPath('code', 'not_a_party_to_disputable');
 });
 
 it('freezes escrow release while a milestone dispute is open, and releases it once resolved', function () {
