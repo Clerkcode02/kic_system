@@ -40,13 +40,18 @@ use App\Domain\Freelance\Models\Milestone;
 use App\Domain\Freelance\Models\Project;
 use App\Domain\Freelance\Models\Proposal;
 use App\Domain\Payment\Events\PaymentSucceeded;
+use App\Domain\Payment\Events\PayoutAnomalyDetected;
 use App\Domain\Payment\Events\PayoutCompleted;
 use App\Domain\Payment\Events\RefundProcessed;
+use App\Domain\Payment\Events\RefundRateSpikeDetected;
+use App\Domain\Payment\Listeners\NotifyAdminsOfPayoutAnomaly;
+use App\Domain\Payment\Listeners\NotifyAdminsOfRefundRateSpike;
 use App\Domain\Payment\Listeners\SendPaymentSucceededNotification;
 use App\Domain\Payment\Listeners\SendPayoutCompletedNotification;
 use App\Domain\Payment\Listeners\SendRefundProcessedNotification;
 use App\Domain\Payment\Models\Payment;
 use App\Domain\Payment\Models\Payout;
+use App\Domain\Payment\Models\Refund;
 use App\Domain\Payment\Services\PaymentGateway;
 use App\Domain\Payment\Services\StripePaymentService;
 use App\Domain\Platform\Models\PlatformSetting;
@@ -62,8 +67,11 @@ use App\Domain\Quotation\Models\Quotation;
 use App\Domain\Review\Events\ReviewReceived;
 use App\Domain\Review\Listeners\SendReviewReceivedNotification;
 use App\Domain\Review\Models\Review;
+use App\Domain\User\Events\RepeatedFailedLoginsDetected;
 use App\Domain\User\Events\UserRegistered;
+use App\Domain\User\Listeners\NotifyAdminsOfRepeatedFailedLogins;
 use App\Domain\User\Listeners\SendEmailVerificationNotification;
+use App\Domain\User\Models\FailedLoginAttempt;
 use App\Domain\User\Models\User;
 use App\Support\Auditable;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -160,6 +168,9 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(UserRegistered::class, SendEmailVerificationNotification::class);
         Event::listen(CategoryTreeChanged::class, FlushCategoryTreeCache::class);
         Event::listen(BusinessSubmittedForVerification::class, NotifyAdminsOfVerificationSubmission::class);
+        Event::listen(RepeatedFailedLoginsDetected::class, NotifyAdminsOfRepeatedFailedLogins::class);
+        Event::listen(PayoutAnomalyDetected::class, NotifyAdminsOfPayoutAnomaly::class);
+        Event::listen(RefundRateSpikeDetected::class, NotifyAdminsOfRefundRateSpike::class);
 
         // SRS §11 notification workflow — one queued listener per event,
         // each building its Notification and sending through
@@ -213,6 +224,28 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by($request->ip().'|'.$identifier);
         });
 
+        // SRS §17 — payments must be measurably tighter than the general API
+        // surface (which currently has no dedicated limiter at all, i.e.
+        // effectively unbounded beyond web-server/infra limits). Keyed by
+        // user id when authenticated (every route this applies to sits
+        // behind api.protected) and falls back to IP for safety.
+        RateLimiter::for('payments', function (Request $request) {
+            return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Abuse guard on booking creation — generous enough that no
+        // legitimate customer or test flow trips it, tight enough to blunt
+        // a scripted flood of bookings against providers.
+        RateLimiter::for('booking-create', function (Request $request) {
+            return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Same rationale as booking-create, kept independent so a burst of
+        // proposal submissions can't starve booking creation or vice versa.
+        RateLimiter::for('proposal-create', function (Request $request) {
+            return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
+        });
+
         // Short, stable aliases for polymorphic *_type columns (payable_type,
         // reviewable_type, disputable_type, attachable_type, auditable_type)
         // instead of raw FQCNs, matching the values documented in the SRS
@@ -239,6 +272,8 @@ class AppServiceProvider extends ServiceProvider
             'payout' => Payout::class,
             'freelancer' => FreelancerProfile::class,
             'platform_setting' => PlatformSetting::class,
+            'refund' => Refund::class,
+            'failed_login_attempt' => FailedLoginAttempt::class,
         ]);
 
         // Models live under app/Domain/*/Models (CLAUDE.md §3), but factories

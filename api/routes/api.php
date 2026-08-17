@@ -111,7 +111,7 @@ Route::prefix('v1')->name('catalog.')->group(function () {
 Route::prefix('v1/bookings')->name('bookings.')->middleware('api.protected')->group(function () {
     Route::get('/', [BookingController::class, 'index'])->name('index');
     Route::get('{booking}', [BookingController::class, 'show'])->name('show');
-    Route::post('/', StoreBookingController::class)->middleware('idempotent')->name('store');
+    Route::post('/', StoreBookingController::class)->middleware(['throttle:booking-create', 'idempotent'])->name('store');
     Route::patch('{booking}/cancel', CancelBookingController::class)->name('cancel');
     Route::post('{booking}/check-in', CheckInBookingController::class)->name('check-in');
     Route::post('{booking}/complete', CompleteBookingController::class)->name('complete');
@@ -142,7 +142,7 @@ Route::prefix('v1/projects')->name('projects.')->group(function () {
         Route::patch('{project}', UpdateProjectController::class)->name('update');
         Route::delete('{project}', CancelProjectController::class)->name('destroy');
 
-        Route::post('{project}/proposals', StoreProposalController::class)->name('proposals.store');
+        Route::post('{project}/proposals', StoreProposalController::class)->middleware('throttle:proposal-create')->name('proposals.store');
         Route::get('{project}/proposals', ProjectProposalController::class)->name('proposals.index');
         Route::post('{project}/reviews', ProjectReviewController::class)->name('reviews.store');
     });
@@ -188,7 +188,7 @@ Route::prefix('v1/notifications')->name('notifications.')->middleware('api.prote
     Route::post('read-all', [NotificationController::class, 'readAll'])->name('read-all');
 });
 
-Route::prefix('v1/payments')->name('payments.')->middleware('api.protected')->group(function () {
+Route::prefix('v1/payments')->name('payments.')->middleware(['api.protected', 'throttle:payments'])->group(function () {
     Route::post('intents', CreatePaymentIntentController::class)->middleware('idempotent')->name('intents.store');
 });
 
@@ -223,7 +223,7 @@ Route::prefix('v1/admin')->name('admin.')->middleware(['api.protected', 'role:ad
     Route::delete('categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
     Route::post('categories/reorder', [AdminCategoryController::class, 'reorder'])->name('categories.reorder');
 
-    Route::post('payments/{payment}/refund', RefundPaymentController::class)->middleware('idempotent')->name('payments.refund');
+    Route::post('payments/{payment}/refund', RefundPaymentController::class)->middleware(['throttle:payments', 'idempotent'])->name('payments.refund');
 
     Route::get('platform-settings', [PlatformSettingController::class, 'index'])->name('platform-settings.index');
     Route::patch('platform-settings/{key}', [PlatformSettingController::class, 'update'])->name('platform-settings.update');
@@ -232,7 +232,7 @@ Route::prefix('v1/admin')->name('admin.')->middleware(['api.protected', 'role:ad
 
     Route::get('payouts', [PayoutController::class, 'index'])->name('payouts.index');
     Route::get('payouts/failed-transfers', [FailedTransferController::class, 'index'])->name('payouts.failed-transfers.index');
-    Route::post('payouts/failed-transfers/{payment}/retry', [FailedTransferController::class, 'retry'])->name('payouts.failed-transfers.retry');
+    Route::post('payouts/failed-transfers/{payment}/retry', [FailedTransferController::class, 'retry'])->middleware('throttle:payments')->name('payouts.failed-transfers.retry');
 
     Route::get('businesses/verification-queue', [BusinessVerificationController::class, 'index'])->name('businesses.verification-queue');
     Route::get('businesses/{business}/verification', [BusinessVerificationController::class, 'show'])->name('businesses.verification.show');
@@ -273,7 +273,7 @@ Route::prefix('v1/provider')->name('provider.')->middleware(['api.protected', 'r
     Route::get('me/availability', [ProviderAvailabilityManagementController::class, 'show'])->name('me.availability.show');
     Route::put('me/availability', [ProviderAvailabilityManagementController::class, 'update'])->name('me.availability.update');
 
-    Route::post('me/stripe/onboarding-link', [StripeConnectController::class, 'onboardingLink'])->name('me.stripe.onboarding-link');
+    Route::post('me/stripe/onboarding-link', [StripeConnectController::class, 'onboardingLink'])->middleware('throttle:payments')->name('me.stripe.onboarding-link');
     Route::get('me/stripe/status', [StripeConnectController::class, 'status'])->name('me.stripe.status');
 
     Route::get('me/earnings', [EarningsController::class, 'index'])->name('me.earnings');

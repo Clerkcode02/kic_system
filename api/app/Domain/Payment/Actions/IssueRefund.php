@@ -14,6 +14,7 @@ use App\Domain\Payment\Events\RefundProcessed;
 use App\Domain\Payment\Models\Payment;
 use App\Domain\Payment\Models\Refund;
 use App\Domain\Payment\Services\PaymentGateway;
+use App\Domain\Payment\Services\RefundRateMonitor;
 use App\Domain\User\Enums\PermissionName;
 use App\Domain\User\Models\User;
 use App\Support\Action;
@@ -38,6 +39,7 @@ final class IssueRefund implements Action
     public function __construct(
         private readonly PaymentGateway $gateway,
         private readonly TransitionBookingStatus $bookingTransition,
+        private readonly RefundRateMonitor $refundRateMonitor,
     ) {
     }
 
@@ -84,7 +86,11 @@ final class IssueRefund implements Action
 
             RefundProcessed::dispatch($refund, $actor);
 
-            return $refund->fresh();
+            $refund = $refund->fresh();
+
+            $this->refundRateMonitor->checkAndAlert($refund);
+
+            return $refund;
         });
     }
 

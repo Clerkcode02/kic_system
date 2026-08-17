@@ -52,6 +52,10 @@ it('implements Auditable on every event representing a critical, auditable actio
         \App\Domain\Dispute\Events\DisputeRaised::class,
         \App\Domain\Dispute\Events\DisputeResolved::class,
         \App\Domain\Dispute\Events\DisputeAssigned::class,
+        // Security anomaly alerts (SRS §17)
+        \App\Domain\User\Events\RepeatedFailedLoginsDetected::class,
+        \App\Domain\Payment\Events\PayoutAnomalyDetected::class,
+        \App\Domain\Payment\Events\RefundRateSpikeDetected::class,
     ];
 
     foreach ($criticalEvents as $eventClass) {

@@ -235,7 +235,7 @@ it('sends exactly one PayoutCompletedNotification to the provider', function () 
     $booking = Booking::factory()->create(['provider_id' => $business->id]);
     Payment::factory()->succeeded()->forBooking($booking)->create();
 
-    app(RunProviderPayoutJob::class)->handle();
+    app()->call([app(RunProviderPayoutJob::class), 'handle']);
 
     expect(notificationCount($provider, \App\Domain\Payment\Notifications\PayoutCompletedNotification::class))->toBe(1);
 });

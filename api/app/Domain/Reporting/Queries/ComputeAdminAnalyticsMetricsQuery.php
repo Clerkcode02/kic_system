@@ -31,14 +31,14 @@ final class ComputeAdminAnalyticsMetricsQuery
     {
         $since24h = Carbon::now()->subDay();
 
-        $gmv = (float) Payment::query()
+        $gmv = (float) Payment::on('pgsql_read')
             ->whereIn('payable_type', ['booking', 'milestone'])
             ->where('status', PaymentStatus::Succeeded)
             ->where('created_at', '>=', $since24h)
             ->get()
             ->sum(fn (Payment $payment) => $payment->amount->toDecimal());
 
-        $payoutVolume = (float) Payment::query()
+        $payoutVolume = (float) Payment::on('pgsql_read')
             ->where('status', PaymentStatus::Succeeded)
             ->whereNotNull('stripe_transfer_id')
             ->where('created_at', '>=', $since24h)
@@ -46,17 +46,17 @@ final class ComputeAdminAnalyticsMetricsQuery
             ->sum(fn (Payment $payment) => $payment->provider_net_amount?->toDecimal() ?? 0.0);
 
         return [
-            'bookings_total' => Booking::query()->count(),
-            'bookings_active_24h' => Booking::query()->where('created_at', '>=', $since24h)->count(),
+            'bookings_total' => Booking::on('pgsql_read')->count(),
+            'bookings_active_24h' => Booking::on('pgsql_read')->where('created_at', '>=', $since24h)->count(),
             'gmv_24h' => $gmv,
             'new_signups_24h' => [
-                'customer' => User::query()->role('customer')->where('created_at', '>=', $since24h)->count(),
-                'provider' => User::query()->role(['provider_owner', 'provider_staff'])->where('created_at', '>=', $since24h)->count(),
-                'freelancer' => User::query()->role('freelancer')->where('created_at', '>=', $since24h)->count(),
+                'customer' => User::on('pgsql_read')->role('customer')->where('created_at', '>=', $since24h)->count(),
+                'provider' => User::on('pgsql_read')->role(['provider_owner', 'provider_staff'])->where('created_at', '>=', $since24h)->count(),
+                'freelancer' => User::on('pgsql_read')->role('freelancer')->where('created_at', '>=', $since24h)->count(),
             ],
-            'verification_queue_depth' => Business::query()->where('verification_status', BusinessVerificationStatus::Pending)->count()
-                + FreelancerProfile::query()->where('approval_status', FreelancerApprovalStatus::Pending)->count(),
-            'open_disputes' => Dispute::query()->whereIn('status', [DisputeStatus::Open, DisputeStatus::UnderReview])->count(),
+            'verification_queue_depth' => Business::on('pgsql_read')->where('verification_status', BusinessVerificationStatus::Pending)->count()
+                + FreelancerProfile::on('pgsql_read')->where('approval_status', FreelancerApprovalStatus::Pending)->count(),
+            'open_disputes' => Dispute::on('pgsql_read')->whereIn('status', [DisputeStatus::Open, DisputeStatus::UnderReview])->count(),
             'payout_volume_24h' => $payoutVolume,
         ];
     }

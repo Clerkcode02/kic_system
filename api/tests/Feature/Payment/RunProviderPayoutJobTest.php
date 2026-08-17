@@ -46,7 +46,7 @@ it('sweeps succeeded booking payments into one payout per provider', function ()
     succeededBookingPayment($businessA, '50.00');
     succeededBookingPayment($businessB, '75.00');
 
-    (new RunProviderPayoutJob())->handle();
+    app()->call([new RunProviderPayoutJob(), 'handle']);
 
     $payoutA = Payout::query()->where('provider_id', $businessA->id)->sole();
     $payoutB = Payout::query()->where('provider_id', $businessB->id)->sole();
@@ -60,8 +60,8 @@ it('never double-counts a payment across two nightly runs', function () {
     [, $business] = bookingProvider();
     succeededBookingPayment($business, '100.00');
 
-    (new RunProviderPayoutJob())->handle();
-    (new RunProviderPayoutJob())->handle();
+    app()->call([new RunProviderPayoutJob(), 'handle']);
+    app()->call([new RunProviderPayoutJob(), 'handle']);
 
     expect(Payout::query()->where('provider_id', $business->id)->count())->toBe(1);
     expect(Payout::query()->where('provider_id', $business->id)->sole()->amount->toDecimal())->toBe('100.00');
@@ -71,7 +71,7 @@ it('exposes the provider earnings ledger via GET /provider/me/earnings', functio
     [$providerUser, $business] = bookingProvider();
     succeededBookingPayment($business, '200.00');
 
-    (new RunProviderPayoutJob())->handle();
+    app()->call([new RunProviderPayoutJob(), 'handle']);
 
     $this->withHeaders(authHeader($providerUser))
         ->getJson('/api/v1/provider/me/earnings')

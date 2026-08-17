@@ -101,6 +101,28 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
+        // SRS §18: "read replicas for the admin analytics dashboard and
+        // reporting queries once traffic warrants it — analytics never
+        // hits the primary write connection." Points at the same database
+        // as `pgsql` by default (every DB_READ_* var falls back to its
+        // DB_* counterpart), so this is a no-op today — swapping to an
+        // actual read replica later is a deploy-config change (set
+        // DB_READ_HOST etc.), not a code change.
+        'pgsql_read' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_READ_URL', env('DB_URL')),
+            'host' => env('DB_READ_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('DB_READ_PORT', env('DB_PORT', '5432')),
+            'database' => env('DB_READ_DATABASE', env('DB_DATABASE', 'laravel')),
+            'username' => env('DB_READ_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('DB_READ_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),
