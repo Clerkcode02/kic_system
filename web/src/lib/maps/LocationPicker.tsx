@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -12,6 +12,7 @@ import {
   CANADA_MAX_ZOOM,
   CANADA_MIN_ZOOM,
 } from './constants'
+import { MapTileLayer } from './MapTileLayer'
 import { geocodeAddress, GeocodingError } from './geocoding'
 import { useBrowserGeolocation } from './useBrowserGeolocation'
 
@@ -163,7 +164,7 @@ export function LocationPicker({
         <p className="text-sm text-red-600">{geolocation.error}</p>
       )}
 
-      <div className="h-64 w-full overflow-hidden rounded-md border border-gray-300 sm:h-80">
+      <div className="relative h-64 w-full overflow-hidden rounded-md border border-gray-300 sm:h-80">
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={coords ? 12 : CANADA_DEFAULT_VIEW.zoom}
@@ -173,10 +174,7 @@ export function LocationPicker({
           maxBoundsViscosity={CANADA_MAX_BOUNDS_VISCOSITY}
           style={{ height: '100%', width: '100%' }}
         >
-          <TileLayer
-            url={import.meta.env.VITE_MAP_TILE_URL ?? ''}
-            attribution={import.meta.env.VITE_MAP_TILE_ATTRIBUTION ?? ''}
-          />
+          <MapTileLayer />
           {coords && <DraggablePin coords={coords} onCoordsChange={onCoordsChange} />}
           <MapClickHandler onCoordsChange={onCoordsChange} />
           <RecenterOnChange coords={coords} />

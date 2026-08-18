@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -10,6 +10,7 @@ import {
   CANADA_MAX_BOUNDS_VISCOSITY,
   CANADA_MAX_ZOOM,
   CANADA_MIN_ZOOM,
+  MapTileLayer,
 } from '@/lib/maps'
 import type { ServiceListItem } from '../types'
 
@@ -45,7 +46,7 @@ export function ServiceMapView({ services, center }: ServiceMapViewProps) {
   }
 
   return (
-    <div className="h-[28rem] w-full overflow-hidden rounded-md border border-gray-300">
+    <div className="relative h-[28rem] w-full overflow-hidden rounded-md border border-gray-300">
       <MapContainer
         key={`${mapCenter.lat}-${mapCenter.lng}`}
         center={[mapCenter.lat, mapCenter.lng]}
@@ -56,10 +57,7 @@ export function ServiceMapView({ services, center }: ServiceMapViewProps) {
         maxBoundsViscosity={CANADA_MAX_BOUNDS_VISCOSITY}
         style={{ height: '100%', width: '100%' }}
       >
-        <TileLayer
-          url={import.meta.env.VITE_MAP_TILE_URL ?? ''}
-          attribution={import.meta.env.VITE_MAP_TILE_ATTRIBUTION ?? ''}
-        />
+        <MapTileLayer />
         {plottable.map((service) => (
           <Marker
             key={service.id}
