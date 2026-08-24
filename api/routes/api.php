@@ -85,7 +85,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1/auth')->name('auth.')->middleware('throttle:auth')->group(function () {
     Route::post('register/customer', RegisterCustomerController::class)->name('register.customer');
     Route::post('register/business', RegisterBusinessController::class)->name('register.business');
-    Route::post('register/freelancer', RegisterFreelancerController::class)->name('register.freelancer');
+    Route::post('register/freelancer', RegisterFreelancerController::class)->middleware('freelance-enabled')->name('register.freelancer');
 
     Route::post('login', LoginController::class)->name('login');
 
@@ -171,7 +171,7 @@ Route::prefix('v1/quotations')->name('quotations.')->middleware('api.protected')
     Route::post('{quotation}/revise', ReviseQuotationController::class)->name('revise');
 });
 
-Route::prefix('v1/projects')->name('projects.')->group(function () {
+Route::prefix('v1/projects')->name('projects.')->middleware('freelance-enabled')->group(function () {
     // Public browsing, matching services/categories (CLAUDE.md §4 — browse
     // is ✅ for every role, including anonymous visitors).
     Route::get('/', [ProjectController::class, 'index'])->name('index');
@@ -188,22 +188,22 @@ Route::prefix('v1/projects')->name('projects.')->group(function () {
     });
 });
 
-Route::prefix('v1/proposals')->name('proposals.')->middleware('api.protected')->group(function () {
+Route::prefix('v1/proposals')->name('proposals.')->middleware(['freelance-enabled', 'api.protected'])->group(function () {
     Route::post('{proposal}/shortlist', ShortlistProposalController::class)->name('shortlist');
     Route::post('{proposal}/withdraw', WithdrawProposalController::class)->name('withdraw');
     Route::post('{proposal}/hire', HireProposalController::class)->name('hire');
 });
 
-Route::prefix('v1/freelancers/me')->name('freelancers.me.')->middleware(['api.protected', 'role:freelancer'])->group(function () {
+Route::prefix('v1/freelancers/me')->name('freelancers.me.')->middleware(['freelance-enabled', 'api.protected', 'role:freelancer'])->group(function () {
     Route::get('proposals', ListMyProposalsController::class)->name('proposals');
 });
 
-Route::prefix('v1/contracts')->name('contracts.')->middleware('api.protected')->group(function () {
+Route::prefix('v1/contracts')->name('contracts.')->middleware(['freelance-enabled', 'api.protected'])->group(function () {
     Route::get('{contract}', [ContractController::class, 'show'])->name('show');
     Route::post('{contract}/milestones', StoreContractMilestonesController::class)->name('milestones.store');
 });
 
-Route::prefix('v1/milestones')->name('milestones.')->middleware('api.protected')->group(function () {
+Route::prefix('v1/milestones')->name('milestones.')->middleware(['freelance-enabled', 'api.protected'])->group(function () {
     Route::post('{milestone}/submit', SubmitMilestoneController::class)->name('submit');
     Route::post('{milestone}/approve', ApproveMilestoneController::class)->name('approve');
     Route::post('{milestone}/reject', RejectMilestoneController::class)->name('reject');
@@ -319,7 +319,7 @@ Route::prefix('v1/provider')->name('provider.')->middleware(['api.protected', 'r
     Route::get('me/earnings', [EarningsController::class, 'index'])->name('me.earnings');
 });
 
-Route::prefix('v1/freelancer')->name('freelancer.')->middleware(['api.protected', 'role:freelancer'])->group(function () {
+Route::prefix('v1/freelancer')->name('freelancer.')->middleware(['freelance-enabled', 'api.protected', 'role:freelancer'])->group(function () {
     Route::get('me/dashboard', [FreelancerDashboardController::class, 'index'])->name('me.dashboard');
     Route::get('me/contracts', [FreelancerContractController::class, 'index'])->name('me.contracts');
     Route::get('me/earnings', [FreelancerEarningsController::class, 'index'])->name('me.earnings');

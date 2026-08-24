@@ -33,3 +33,17 @@ Schedule::job(new RunProviderPayoutJob())->dailyAt('02:00')->withoutOverlapping(
 // SRS §12 — admin analytics dashboard reads from this hourly snapshot,
 // never live aggregation.
 Schedule::job(new GenerateAdminAnalyticsSnapshotJob())->hourly()->withoutOverlapping()->onOneServer();
+
+// SRS §21 — application-level backup (app code + a `pg_dump` of the
+// database, per config/backup.php), shipped to the dedicated 'backups' S3
+// disk. This is a second line of defense, not the primary recovery path —
+// the managed Postgres instance's own PITR (SRS §21 infra checklist) is
+// what backs point-in-time restores; this is what you'd reach for to
+// restore into a fresh environment or recover from a bucket/account-level
+// disaster. `backup:clean` enforces the retention policy in
+// config/backup.php's 'cleanup' block; `backup:monitor` fires
+// UnhealthyBackupWasFoundNotification (config/backup.php's mail
+// notification) if a backup goes stale or oversized.
+Schedule::command('backup:run')->dailyAt('01:00')->withoutOverlapping()->onOneServer();
+Schedule::command('backup:clean')->dailyAt('01:30')->withoutOverlapping()->onOneServer();
+Schedule::command('backup:monitor')->dailyAt('02:30')->withoutOverlapping()->onOneServer();

@@ -16,6 +16,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Sentry\State\Scope;
+
+use function Sentry\withScope;
+
+use Throwable;
 
 /**
  * CLAUDE.md §7/§14: dispatched on the `payments` queue by
@@ -75,5 +80,27 @@ final class ProcessStripeWebhookJob implements ShouldQueue
         };
 
         $event->update(['processed_at' => now()]);
+    }
+
+    /**
+     * SRS §21 deployment prompt: "Alert on Stripe webhook processing
+     * failures specifically" — a plain uncaught exception here would still
+     * reach Sentry via the queue worker's default failed-job reporting,
+     * but with no way to distinguish it from any other job failure. Tagging
+     * it lets alert rules target this specific, payment-critical failure
+     * mode instead of firing on every noisy background job retry.
+     */
+    public function failed(?Throwable $exception): void
+    {
+        if ($exception === null) {
+            return;
+        }
+
+        withScope(function (Scope $scope) use ($exception): void {
+            $scope->setTag('alert', 'stripe-webhook-processing-failure');
+            $scope->setContext('stripe_event', ['stripe_event_id' => $this->stripeEventId]);
+
+            report($exception);
+        });
     }
 }
