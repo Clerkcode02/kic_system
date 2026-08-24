@@ -1,0 +1,158 @@
+name: Deploy
+
+# SRS §21: "containerized Laravel app (Docker) behind an ALB, autoscaling
+# app servers... separate Horizon worker deployment scaled independently
+# from web traffic." Assumes AWS ECS/Fargate as the concrete target (the
+# architecture described maps directly onto it); swap the "Deploy" steps
+# for your platform's equivalent if you're not on ECS — everything before
+# that (build/push/migrate) is platform-agnostic.
+#
+# Flow: build the image once -> push it once -> migrate (manual approval
+# gate, production only) -> roll out web and worker deployments in
+# parallel from the same already-pushed image. Staging deploys straight
+# through with no approval gate.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'staging' }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve image tag
+        id: meta
+        run: |
+          IMAGE="${REGISTRY}/${IMAGE_NAME}:${GITHUB_SHA}"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  migrate:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    # The manual approval gate: configure a required reviewer on the
+    # "production" GitHub Environment (repo Settings -> Environments).
+    # Staging has no matching environment protection rule, so it sails
+    # through. `php artisan migrate --force` is the only step that
+    # mutates the database — deploy jobs below never run it themselves.
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Run database migrations
+        env:
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
+        run: |
+          echo "Running migrations for ${IMAGE} against ${{ github.event.inputs.environment || 'staging' }}"
+          # One-off ECS task using the freshly-pushed image, overriding the
+          # container command. Requires AWS credentials configured on this
+          # job (aws-actions/configure-aws-credentials) and the task
+          # definition family/cluster/subnets as repo/environment vars —
+          # left as placeholders since cluster topology is
+          # environment-specific.
+          #
+          # aws ecs run-task \
+          #   --cluster "$ECS_CLUSTER" \
+          #   --task-definition "$ECS_TASK_DEFINITION" \
+          #   --launch-type FARGATE \
+          #   --network-configuration "$ECS_NETWORK_CONFIG" \
+          #   --overrides '{"containerOverrides":[{"name":"api","command":["php","artisan","migrate","--force"]}]}' \
+          #   --started-by "gh-actions-${GITHUB_SHA}"
+
+  deploy-web:
+    needs: [build-and-push, migrate]
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Roll out web (php-fpm + nginx) service
+        env:
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
+        run: |
+          echo "Rolling deploy of ${IMAGE} to the web ECS service"
+          # ECS's own rolling-update deployment controller (minimumHealthyPercent
+          # >= 100, maximumPercent >= 200) is what makes this zero-downtime —
+          # nothing extra to configure here beyond pointing the service at the
+          # new image.
+          #
+          # aws ecs update-service \
+          #   --cluster "$ECS_CLUSTER" \
+          #   --service "$ECS_WEB_SERVICE" \
+          #   --force-new-deployment
+
+  deploy-worker:
+    needs: [build-and-push, migrate]
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Roll out Horizon worker service
+        env:
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
+        run: |
+          echo "Rolling deploy of ${IMAGE} to the Horizon worker ECS service"
+          # Same image, different entrypoint (docker/entrypoint-worker.sh —
+          # see the Dockerfile) and a separate ECS service so worker capacity
+          # scales independently of web traffic (CLAUDE.md §21). The worker
+          # task definition must grant the SYS_NICE Linux capability —
+          # Horizon's 'payments' supervisor renices itself
+          # (config/horizon.php) and fails to boot without it. See
+          # docs/DEPLOYMENT.md §12.
+          #
+          # aws ecs update-service \
+          #   --cluster "$ECS_CLUSTER" \
+          #   --service "$ECS_WORKER_SERVICE" \
+          #   --force-new-deployment
+
+  deploy-scheduler:
+    needs: [build-and-push, migrate]
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Roll out scheduler service
+        env:
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
+        run: |
+          echo "Rolling deploy of ${IMAGE} to the scheduler ECS service"
+          # entrypoint-scheduler.sh, one replica only — see DEPLOYMENT.md.
+          #
+          # aws ecs update-service \
+          #   --cluster "$ECS_CLUSTER" \
+          #   --service "$ECS_SCHEDULER_SERVICE" \
+          #   --force-new-deployment

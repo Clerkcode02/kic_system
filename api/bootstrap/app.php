@@ -12,6 +12,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Sentry\Laravel\Integration as SentryIntegration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'idempotent' => \App\Http\Middleware\HandleIdempotency::class,
             'resolve-booking-actor' => \App\Http\Middleware\ResolveBookingActor::class,
+            'freelance-enabled' => \App\Http\Middleware\EnsureFreelanceMarketplaceEnabled::class,
         ]);
 
         // SRS §6.1 — the guest surface. `resolve-booking-actor` runs first
@@ -117,4 +119,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => 'Resource not found.',
             ], 404);
         });
+
+        // SRS §21 deployment prompt — wires Sentry's exception listener
+        // in on top of the JSON renderers above, which is what actually
+        // reports errors (renderers only shape the HTTP response).
+        SentryIntegration::handles($exceptions);
     })->create();

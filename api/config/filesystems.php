@@ -62,6 +62,24 @@ return [
             'report' => false,
         ],
 
+        // SRS §21 — spatie/laravel-backup's destination (config/backup.php).
+        // Deliberately a separate bucket from 'AWS_BUCKET' (which holds
+        // user-facing documents/portfolios/deliverables): backups need
+        // their own lifecycle rules and access policy, and mixing app
+        // backups into the user-content bucket risks a lifecycle rule
+        // written for one deleting the other.
+        'backups' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_BACKUPS_BUCKET'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

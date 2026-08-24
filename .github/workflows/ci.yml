@@ -1,0 +1,116 @@
+name: CI
+
+# SRS §21 — single CI entrypoint covering both halves of the monorepo:
+# lint + static analysis + tests + build for the Laravel API, the same for
+# the React SPA, plus the OpenAPI staleness gate that keeps the generated
+# frontend types honest. Supersedes the old api-only workflow.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: api
+
+    # Applies to every step below, not just migrations — `composer check`
+    # (pint+larastan+pest) and `app:export-openapi` also connect to this DB.
+    # Values match this job's own `services:` container, not .env.example's
+    # Docker Compose port (5433) or the local dev DB name.
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: marketplace_testing
+      DB_USERNAME: marketplace
+      DB_PASSWORD: marketplace
+      CACHE_STORE: array
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: marketplace
+          POSTGRES_PASSWORD: marketplace
+          POSTGRES_DB: marketplace_testing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U marketplace -d marketplace_testing"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pgsql, pdo_pgsql, gd, redis
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      # CLAUDE.md §11: "Run composer pint, composer larastan, php artisan
+      # test... before declaring a task done" — `check` bundles the first
+      # three (lint/analyse/test) into one script.
+      - name: Lint, static analysis, tests
+        run: composer check
+
+      # CLAUDE.md §11 "regenerate the OpenAPI spec... after changing an
+      # endpoint" — regenerates the spec in-memory and diffs it against
+      # docs/openapi.json without writing, so a route/annotation change not
+      # followed by `php artisan app:export-openapi` fails CI instead of
+      # silently drifting from the API (and from the frontend's generated
+      # types, which come from this same file).
+      - name: Verify docs/openapi.json is up to date
+        run: php artisan app:export-openapi --check
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build

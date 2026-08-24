@@ -43,6 +43,15 @@ class GmailApiTransport extends AbstractTransport
         return 'gmail+api://oauth2';
     }
 
+    /**
+     * Used by HealthController — proves the refresh token is still valid
+     * and Google's token endpoint is reachable, without sending mail.
+     */
+    public function checkTokenReachable(): void
+    {
+        $this->accessToken();
+    }
+
     protected function doSend(SentMessage $message): void
     {
         $raw = base64_encode($message->toString());

@@ -77,10 +77,12 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Laravel\Pennant\Feature;
 use Minishlink\WebPush\WebPush;
 use Stripe\StripeClient;
 
@@ -293,5 +295,18 @@ class AppServiceProvider extends ServiceProvider
         Factory::guessFactoryNamesUsing(
             fn (string $modelName): string => 'Database\\Factories\\'.Str::afterLast($modelName, '\\').'Factory'
         );
+
+        // SRS §21 deployment prompt: the freelance marketplace (projects,
+        // proposals, contracts, milestones — see `freelance-enabled`
+        // middleware) sits behind this flag so it can be rolled out
+        // gradually instead of shipping day one for every account. No
+        // per-user resolver is defined, so Pennant falls back to its
+        // default global scope — this is a platform-wide toggle, not a
+        // per-user experiment.
+        Feature::define('freelance-marketplace', fn (): bool => (bool) config('features.freelance_marketplace', true));
+
+        // Pulse's dashboard has no route middleware of its own beyond
+        // `viewPulse` — CLAUDE.md §4: observability is admin-only.
+        Gate::define('viewPulse', fn ($user): bool => $user->hasAnyRole(['admin', 'super_admin']));
     }
 }
