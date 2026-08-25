@@ -50,7 +50,14 @@ class HandleIdempotency
 
         $response = $next($request);
 
-        if ($response->getStatusCode() < 500) {
+        // Only a response that actually changed (or reflects) durable state
+        // is safe to replay verbatim forever under this key. A 4xx here
+        // means nothing was created — most commonly a validation error the
+        // caller is expected to fix and resubmit with the *same* key (the
+        // booking wizard reuses one key across retries, CLAUDE.md §7/§9),
+        // so caching it would make every subsequent, corrected resubmission
+        // replay the original mistake instead of being re-validated.
+        if ($response->getStatusCode() < 400) {
             try {
                 IdempotencyKey::create([
                     'key' => $key,

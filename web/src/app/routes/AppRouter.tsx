@@ -98,7 +98,7 @@ export function AppRouter() {
         <Route path="/verify-pending" element={<VerifyPendingPage />} />
         <Route path="/suspended" element={<SuspendedPage />} />
 
-        <Route element={<RoleGuard allowedRoles={['customer']} />}>
+        <Route element={<RoleGuard allowedRoles={['customer']} requireVerified />}>
           <Route path="/customer/*" element={<CustomerDashboard />} />
         </Route>
 
@@ -110,7 +110,7 @@ export function AppRouter() {
           <Route path="/freelancer/*" element={<FreelancerDashboard />} />
         </Route>
 
-        <Route element={<RoleGuard allowedRoles={['admin']} />}>
+        <Route element={<RoleGuard allowedRoles={['admin']} requireVerified />}>
           <Route path="/admin/*" element={<AdminDashboard />} />
         </Route>
 
