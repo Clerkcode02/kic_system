@@ -33,13 +33,19 @@ export function BookingWizard() {
   const { data: service, isLoading, isError } = useService(serviceId)
 
   const wizard = useBookingWizardStore()
+  // Selected on its own because `wizard` is the whole store object: its
+  // identity changes on every state write, so depending on it in the effect
+  // below would re-run that effect on each keystroke of the wizard. The
+  // action itself is stable for the store's lifetime.
+  const startFor = useBookingWizardStore((state) => state.startFor)
+  const setSchedule = useBookingWizardStore((state) => state.setSchedule)
   const [guestResult, setGuestResult] = useState<GuestBookingCreated | null>(null)
 
   // Switching services resets the flow — including the idempotency key, so
   // the new submission can't replay the previous service's response.
   useEffect(() => {
-    if (serviceId) wizard.startFor(serviceId)
-  }, [serviceId, wizard])
+    if (serviceId) startFor(serviceId)
+  }, [serviceId, startFor])
 
   // An authenticated user has no Contact step — their details come from
   // their account, and sending guest fields while signed in is a 422 by
@@ -107,7 +113,7 @@ export function BookingWizard() {
             businessId={service.business.id}
             date={wizard.date}
             slot={wizard.slot}
-            onChange={(nextDate, nextSlot) => wizard.setSchedule(nextDate, nextSlot)}
+            onChange={setSchedule}
             onNext={() => goTo(indexOf('Location'))}
           />
         )}

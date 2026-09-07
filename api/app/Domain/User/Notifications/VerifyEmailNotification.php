@@ -5,19 +5,13 @@ declare(strict_types=1);
 namespace App\Domain\User\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
 
-class VerifyEmailNotification extends Notification implements ShouldQueue
+class VerifyEmailNotification extends Notification
 {
     use Queueable;
-
-    public function __construct()
-    {
-        $this->onQueue('notifications');
-    }
 
     /**
      * @return list<string>

@@ -17,7 +17,7 @@ final class BookingDetailQuery
         return Booking::query()
             ->with([
                 'service:id,title,pricing_type,base_price,currency',
-                'provider:id,legal_name,rating_avg',
+                'provider:id,user_id,legal_name,rating_avg',
                 'customer:id,name',
                 'address',
                 'statusHistory' => fn ($q) => $q->orderBy('created_at'),

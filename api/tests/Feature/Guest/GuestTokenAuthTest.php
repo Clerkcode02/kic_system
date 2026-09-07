@@ -14,6 +14,7 @@ use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 
 uses(RefreshDatabase::class);
@@ -120,6 +121,63 @@ it('runs the entire guest lifecycle with no cookies at all', function () {
             ->assertOk()
             ->assertJsonPath('data.status', BookingStatus::Cancelled->value)
             ->assertJsonPath('meta.cancellation_fee_applied', true)
+    );
+});
+
+it('accepts a guest quotation from the first-party SPA without a CSRF token', function () {
+    [, $business] = bookingProvider();
+    $providerUser = $business->user;
+    $service = bookingService($business, ServicePricingType::Hourly);
+
+    $created = $this->withHeaders(['Idempotency-Key' => (string) Str::uuid()])
+        ->postJson('/api/v1/bookings', [
+            'service_id' => $service->id,
+            'scheduled_date' => futureBookingDate(),
+            'time_slot_start' => '09:00:00',
+            'time_slot_end' => '11:00:00',
+            'guest_name' => 'Dana Okafor',
+            'guest_email' => 'dana@example.com',
+            'guest_phone' => '+14165550143',
+            'service_address' => [
+                'line1' => '55 Front St W',
+                'city' => 'Toronto',
+                'province' => 'ON',
+                'postal_code' => 'M5J 1E6',
+                'lat' => 43.6426,
+                'lng' => -79.3871,
+            ],
+        ])
+        ->assertCreated();
+
+    $booking = Booking::query()
+        ->where('booking_number', $created->json('data.booking_number'))
+        ->firstOrFail();
+
+    $this->actingAs($providerUser, 'sanctum')
+        ->postJson("/api/v1/bookings/{$booking->id}/quotations", [
+            'labor_cost' => '200.00',
+            'materials_cost' => '50.00',
+            'additional_fees' => '0.00',
+            'discount_amount' => '0.00',
+            'line_items' => [
+                ['description' => 'Labour', 'quantity' => 2, 'unit_price' => '100.00'],
+            ],
+        ])
+        ->assertCreated();
+
+    $quotation = Quotation::query()->where('booking_id', $booking->id)->firstOrFail();
+
+    forgetAuthGuards();
+
+    assertCookieless(
+        $this->withHeaders([
+            'Origin' => 'http://localhost:5173',
+            'Referer' => 'http://localhost:5173/track?booking='.$booking->booking_number,
+            'X-Booking-Token' => $created->json('meta.access_token'),
+            'Idempotency-Key' => (string) Str::uuid(),
+        ])
+            ->postJson("/api/v1/guest/quotations/{$quotation->id}/accept")
+            ->assertOk()
     );
 });
 

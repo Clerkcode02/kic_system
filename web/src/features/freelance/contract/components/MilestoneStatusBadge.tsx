@@ -1,12 +1,12 @@
-import { Badge } from '@/components'
+import { StatusStamp, type StampRole } from '../../components'
 import type { MilestoneStatus } from '../types'
 
-const STATUS_TONE: Record<MilestoneStatus, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {
+const STATUS_ROLE: Record<MilestoneStatus, StampRole> = {
   pending: 'neutral',
-  submitted: 'info',
-  approved: 'success',
-  paid: 'success',
-  disputed: 'danger',
+  submitted: 'active',
+  approved: 'awaiting',
+  paid: 'paid',
+  disputed: 'disputed',
 }
 
 const STATUS_LABEL: Record<MilestoneStatus, string> = {
@@ -17,6 +17,16 @@ const STATUS_LABEL: Record<MilestoneStatus, string> = {
   disputed: 'Disputed',
 }
 
-export function MilestoneStatusBadge({ status }: { status: MilestoneStatus }) {
-  return <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Badge>
+export function MilestoneStatusBadge({
+  status,
+  animate = true,
+}: {
+  status: MilestoneStatus
+  animate?: boolean
+}) {
+  return (
+    <StatusStamp role={STATUS_ROLE[status]} animate={animate}>
+      {STATUS_LABEL[status]}
+    </StatusStamp>
+  )
 }

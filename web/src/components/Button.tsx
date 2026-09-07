@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react'
 import { cn } from '@/lib/cn'
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost'
+type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'ink'
 type Size = 'sm' | 'md' | 'lg'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -16,6 +16,8 @@ const variantClasses: Record<Variant, string> = {
     'bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 focus-visible:outline-gray-400',
   danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600',
   ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-gray-400',
+  // Trade Docket world (freelancer area): the postmark-ink primary action.
+  ink: 'bg-action text-docket-paper hover:bg-action-hover focus-visible:outline-action',
 }
 
 const sizeClasses: Record<Size, string> = {

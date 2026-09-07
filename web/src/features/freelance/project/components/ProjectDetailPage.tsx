@@ -1,6 +1,8 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { Badge, Card, EmptyState, Skeleton } from '@/components'
+import { useAuth } from '@/app/providers/useAuth'
 import { ProposalForm } from '@/features/freelance/proposal'
+import { withNext } from '@/lib/navigation/nextParam'
 import { useProject } from '../hooks/useProjects'
 import type { ProjectStatus } from '../types'
 
@@ -9,6 +11,59 @@ const STATUS_TONE: Record<ProjectStatus, 'neutral' | 'success' | 'warning' | 'da
   in_progress: 'info',
   completed: 'neutral',
   cancelled: 'danger',
+}
+
+/**
+ * Prompt shown in place of the proposal form to anyone who can't submit one.
+ *
+ * Browsing projects is public (CLAUDE.md §4), but everything on the
+ * freelance side that *acts* requires an account — so an anonymous visitor
+ * gets a route into signup rather than a form that would 401 on submit.
+ */
+function ProposalGate({ projectId }: { projectId: string }) {
+  const { isAuthenticated, user } = useAuth()
+  const { pathname } = useLocation()
+
+  if (isAuthenticated && user?.role === 'freelancer') {
+    return <ProposalForm projectId={projectId} />
+  }
+
+  if (isAuthenticated) {
+    return (
+      <Card>
+        <p className="text-sm text-gray-700">
+          Only freelancer accounts can submit proposals on this project.
+        </p>
+      </Card>
+    )
+  }
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <h2 className="text-sm font-semibold text-gray-900">Want to work on this?</h2>
+      <p className="text-sm text-gray-600">
+        Freelance work needs an account so we can hold your milestone payments in escrow and pay
+        them out to you.
+      </p>
+      {/* The register link carries no `?next=`: RegisterFreelancerPage
+          doesn't read one, and a new freelancer can't propose until they're
+          verified and approved anyway. */}
+      <div className="flex flex-wrap gap-3">
+        <Link
+          to="/register/freelancer"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        >
+          Join as a freelancer
+        </Link>
+        <Link
+          to={withNext('/login', pathname)}
+          className="rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        >
+          Sign in
+        </Link>
+      </div>
+    </Card>
+  )
 }
 
 export function ProjectDetailPage() {
@@ -32,7 +87,7 @@ export function ProjectDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-6">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 p-4 sm:p-6">
       <Card className="flex flex-col gap-3">
         <div className="flex items-start justify-between gap-2">
           <h1 className="text-lg font-semibold text-gray-900">{project.title}</h1>
@@ -64,7 +119,7 @@ export function ProjectDetailPage() {
         </Card>
       )}
 
-      {project.status === 'open' && !project.contract && <ProposalForm projectId={project.id} />}
+      {project.status === 'open' && !project.contract && <ProposalGate projectId={project.id} />}
     </div>
   )
 }

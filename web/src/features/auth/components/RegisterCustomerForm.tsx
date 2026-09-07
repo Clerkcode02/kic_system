@@ -19,7 +19,7 @@ export function RegisterCustomerForm() {
   const onSubmit = (values: RegisterCustomerFormValues) =>
     submitWithApiErrors(async () => {
       await registerCustomer(values)
-      navigate('/verify-pending', { replace: true })
+      navigate('/verify-pending', { replace: true, state: { email: values.email } })
     }, 'Registration failed. Please try again.')
 
   return (

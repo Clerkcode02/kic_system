@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Badge, Card, Pagination, Table, type TableColumn } from '@/components'
+import { Card, Pagination, Table, type TableColumn } from '@/components'
+import { MoneyFigure, StatusStamp } from '../../components'
+import { formatMoney } from '@/lib/format/money'
 import { useEarningsPage } from '../hooks/useEarnings'
 import type { EarningRow } from '../types'
 
@@ -8,32 +10,40 @@ const COLUMNS: TableColumn<EarningRow>[] = [
   {
     key: 'amount',
     header: 'Amount',
-    render: (row) => `$${row.amount} ${row.currency}`,
+    className: 'font-mono tabular-nums',
+    render: (row) => <MoneyFigure amount={row.amount} />,
   },
   {
     key: 'platform_fee',
     header: 'Platform fee',
-    render: (row) => `$${row.platform_fee_amount}`,
+    className: 'font-mono tabular-nums text-docket-soft',
+    render: (row) => `−${formatMoney(row.platform_fee_amount)}`,
   },
   {
     key: 'net',
     header: 'Net',
-    render: (row) => `$${row.net_amount}`,
+    className: 'font-mono font-semibold tabular-nums',
+    render: (row) => <MoneyFigure amount={row.net_amount} />,
   },
   {
     key: 'status',
     header: 'Status',
     render: (row) =>
       row.released ? (
-        <Badge tone="success">Released</Badge>
+        <StatusStamp role="paid" animate={false}>
+          Released
+        </StatusStamp>
       ) : (
-        <Badge tone="warning">In escrow</Badge>
+        <StatusStamp role="awaiting" animate={false}>
+          In escrow
+        </StatusStamp>
       ),
   },
   {
     key: 'created_at',
     header: 'Date',
-    render: (row) => (row.created_at ? new Date(row.created_at).toLocaleDateString() : '—'),
+    className: 'font-mono text-docket-soft',
+    render: (row) => (row.created_at ? new Date(row.created_at).toLocaleDateString('en-CA') : '—'),
   },
 ]
 
@@ -59,14 +69,19 @@ export function EarningsPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6">
-      <h1 className="text-lg font-semibold text-gray-900">Earnings</h1>
+      <h1 className="font-mono text-xs font-bold uppercase tracking-widest text-docket-soft">
+        Earnings statement
+      </h1>
 
-      <Card>
-        <p className="text-sm text-gray-500">Released this page</p>
-        <p className="text-2xl font-semibold text-gray-900">${totalReleased.toFixed(2)} CAD</p>
+      <Card variant="ticket">
+        <p className="font-mono text-xs font-bold uppercase tracking-widest text-docket-soft">
+          Released this page
+        </p>
+        <MoneyFigure amount={totalReleased} className="text-2xl font-semibold text-docket-ink" />
       </Card>
 
       <Table
+        variant="ledger"
         columns={COLUMNS}
         rows={earnings}
         getRowKey={(row) => row.id}

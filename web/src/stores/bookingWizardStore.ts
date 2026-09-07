@@ -105,7 +105,16 @@ export const useBookingWizardStore = create<BookingWizardState>()(
       },
 
       setStep: (stepIndex) => set({ stepIndex }),
-      setSchedule: (date, slot) => set({ date, slot }),
+      // No-ops when nothing actually changed. Re-picking the day already
+      // shown (or the slot already selected) must not push a new state
+      // object at every subscriber — that churn is what a calendar echoing
+      // its own date back turns into an update loop.
+      setSchedule: (date, slot) =>
+        set((state) =>
+          state.date === date && state.slot?.start === slot?.start && state.slot?.end === slot?.end
+            ? state
+            : { date, slot },
+        ),
       setAddressId: (addressId) => set({ addressId }),
       setAddress: (address) => set({ address, addressId: null }),
       setContact: (contact) => set({ contact }),

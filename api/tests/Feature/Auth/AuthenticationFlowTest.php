@@ -167,7 +167,7 @@ it('sets business and freelancer accounts to pending verification on registratio
     expect($user->status->value)->toBe('pending');
 })->with(['business', 'freelancer']);
 
-it('fires UserRegistered and queues a verification email on every registration flow', function (string $role) {
+it('fires UserRegistered and sends a verification email on every registration flow', function (string $role) {
     Notification::fake();
 
     ['endpoint' => $endpoint, 'payload' => $payload] = registrationRequestFor($role);

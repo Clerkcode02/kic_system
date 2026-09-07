@@ -19,7 +19,7 @@ export function RegisterFreelancerForm() {
   const onSubmit = (values: RegisterFreelancerFormValues) =>
     submitWithApiErrors(async () => {
       await registerFreelancer(values)
-      navigate('/verify-pending', { replace: true })
+      navigate('/verify-pending', { replace: true, state: { email: values.email } })
     }, 'Registration failed. Please try again.')
 
   return (

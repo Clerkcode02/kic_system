@@ -1,14 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Badge, Card, EmptyState, Skeleton } from '@/components'
+import { EmptyState, Skeleton } from '@/components'
+import { MoneyFigure } from '../../components'
 import { useInfiniteMyContracts } from '../hooks/useContracts'
-import type { ContractStatus } from '../types'
-
-const STATUS_TONE: Record<ContractStatus, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {
-  active: 'info',
-  completed: 'success',
-  terminated: 'danger',
-}
+import { ContractStatusBadge } from './ContractStatusBadge'
 
 export function ContractListPage() {
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -31,12 +26,14 @@ export function ContractListPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6">
-      <h1 className="text-lg font-semibold text-gray-900">Your contracts</h1>
+      <h1 className="font-mono text-xs font-bold uppercase tracking-widest text-docket-soft">
+        Your contracts
+      </h1>
 
       {isLoading && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
           {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 rounded-lg" />
+            <Skeleton key={index} className="h-14 rounded-sm" />
           ))}
         </div>
       )}
@@ -50,26 +47,30 @@ export function ContractListPage() {
         />
       )}
 
-      <div className="flex flex-col gap-3">
-        {contracts.map((contract) => (
-          <Link key={contract.id} to={`/freelancer/contracts/${contract.id}`}>
-            <Card className="flex items-center justify-between gap-4 transition hover:shadow-md">
-              <div>
-                <p className="font-medium text-gray-900">
+      {contracts.length > 0 && (
+        <div className="flex flex-col divide-y divide-dashed divide-docket-line overflow-hidden rounded-sm border border-docket-line bg-docket-paper shadow-ticket">
+          {contracts.map((contract) => (
+            <Link
+              key={contract.id}
+              to={`/freelancer/contracts/${contract.id}`}
+              className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-docket-well sm:px-6"
+            >
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-docket-ink">
                   {contract.project?.title ?? 'Contract'}
                 </p>
-                <p className="text-sm text-gray-500">
-                  ${contract.total_amount} {contract.currency}
+                <p className="font-mono text-sm tabular-nums text-docket-soft">
+                  <MoneyFigure amount={contract.total_amount} />
                 </p>
               </div>
-              <Badge tone={STATUS_TONE[contract.status]}>{contract.status}</Badge>
-            </Card>
-          </Link>
-        ))}
-      </div>
+              <ContractStatusBadge status={contract.status} />
+            </Link>
+          ))}
+        </div>
+      )}
       <div ref={sentinelRef} className="h-4" />
       {isFetchingNextPage && (
-        <p className="py-2 text-center text-sm text-gray-500">Loading more…</p>
+        <p className="py-2 text-center text-sm text-docket-soft">Loading more…</p>
       )}
     </div>
   )

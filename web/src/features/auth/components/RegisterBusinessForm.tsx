@@ -25,7 +25,7 @@ export function RegisterBusinessForm() {
   const onSubmit = (values: RegisterBusinessFormValues) =>
     submitWithApiErrors(async () => {
       await registerBusiness(values)
-      navigate('/verify-pending', { replace: true })
+      navigate('/verify-pending', { replace: true, state: { email: values.email } })
     }, 'Registration failed. Please try again.')
 
   return (

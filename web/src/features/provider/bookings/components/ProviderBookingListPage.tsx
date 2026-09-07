@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Card, EmptyState, Select, Skeleton } from '@/components'
 import { BOOKING_STATUS_LABELS, BookingStatusBadge } from '@/features/booking/components/BookingStatusBadge'
 import type { BookingStatus } from '@/features/booking/types'
+import { formatBookingDateShort } from '@/features/booking/utils/bookingDate'
 import { useInfiniteProviderBookings } from '../hooks/useProviderBookings'
 
 const STATUS_FILTER_OPTIONS = [
@@ -70,7 +71,7 @@ export function ProviderBookingListPage() {
               <div>
                 <p className="font-medium text-gray-900">{booking.service.title}</p>
                 <p className="text-sm text-gray-500">
-                  {booking.customer.name} · {booking.scheduled_date} ·{' '}
+                  {booking.customer.name} · {formatBookingDateShort(booking.scheduled_date)} ·{' '}
                   {booking.time_slot_start.slice(0, 5)}–{booking.time_slot_end.slice(0, 5)}
                 </p>
                 <p className="text-xs text-gray-400">#{booking.booking_number}</p>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -29,11 +29,17 @@ export function UnauthorizedPage() {
 
 export function VerifyPendingPage() {
   const [isSent, setIsSent] = useState(false)
+  const location = useLocation()
+  const state = location.state as { email?: unknown } | null
+  const emailFromState = typeof state?.email === 'string' ? state.email : ''
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<ResendFormValues>({ resolver: zodResolver(resendSchema) })
+  } = useForm<ResendFormValues>({
+    resolver: zodResolver(resendSchema),
+    defaultValues: { email: emailFromState },
+  })
 
   const onSubmit = async (values: ResendFormValues) => {
     try {
@@ -45,7 +51,7 @@ export function VerifyPendingPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center px-4">
+    <div className="flex min-h-svh items-center justify-center bg-gray-50 px-4 text-gray-900">
       <div className="w-full max-w-sm">
         <EmptyState
           title="Check your email"
@@ -59,6 +65,7 @@ export function VerifyPendingPage() {
               label="Didn't get it? Resend to"
               type="email"
               autoComplete="email"
+              className="bg-white text-gray-900 placeholder:text-gray-400"
               error={errors.email?.message}
               {...register('email')}
             />

@@ -5,6 +5,7 @@ import { AttachmentList } from '@/features/booking/components/AttachmentList'
 import { BookingStatusBadge } from '@/features/booking/components/BookingStatusBadge'
 import { StatusTimeline } from '@/features/booking/components/StatusTimeline'
 import { QuotationBuilderForm, QuotationHistoryList } from '@/features/quotation'
+import { formatBookingDate } from '@/features/booking/utils/bookingDate'
 import { useProviderBooking } from '../hooks/useProviderBookings'
 
 export function ProviderBookingDetailPage() {
@@ -50,7 +51,7 @@ export function ProviderBookingDetailPage() {
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
             <p className="text-gray-500">Date</p>
-            <p className="font-medium text-gray-900">{booking.scheduled_date}</p>
+            <p className="font-medium text-gray-900">{formatBookingDate(booking.scheduled_date)}</p>
           </div>
           <div>
             <p className="text-gray-500">Time</p>

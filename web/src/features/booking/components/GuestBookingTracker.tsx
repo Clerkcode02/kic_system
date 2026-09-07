@@ -10,6 +10,7 @@ import {
 } from '../hooks/useGuestBooking'
 import { FEE_APPLIES_STATUSES } from '../types'
 import type { GuestBooking } from '../types.guest'
+import { formatBookingDate } from '../utils/bookingDate'
 
 interface GuestBookingTrackerProps {
   booking: GuestBooking
@@ -103,7 +104,7 @@ export function GuestBookingTracker({ booking }: GuestBookingTrackerProps) {
           <div>
             <dt className="text-gray-500">When</dt>
             <dd className="font-medium text-gray-900">
-              {booking.scheduled_date}, {booking.time_slot_start.slice(0, 5)}–
+              {formatBookingDate(booking.scheduled_date)}, {booking.time_slot_start.slice(0, 5)}–
               {booking.time_slot_end.slice(0, 5)}
             </dd>
           </div>

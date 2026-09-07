@@ -8,6 +8,7 @@ import { useBooking } from '../hooks/useBookings'
 import { AttachmentList } from './AttachmentList'
 import { BookingStatusBadge } from './BookingStatusBadge'
 import { CancelBookingModal } from './CancelBookingModal'
+import { formatBookingDate } from '../utils/bookingDate'
 import { StatusTimeline } from './StatusTimeline'
 
 const CANCELLABLE_STATUSES = new Set([
@@ -62,7 +63,7 @@ export function BookingDetailPage() {
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
             <p className="text-gray-500">Date</p>
-            <p className="font-medium text-gray-900">{booking.scheduled_date}</p>
+            <p className="font-medium text-gray-900">{formatBookingDate(booking.scheduled_date)}</p>
           </div>
           <div>
             <p className="text-gray-500">Time</p>

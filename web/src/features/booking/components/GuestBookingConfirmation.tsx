@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, Card } from '@/components'
 import type { GuestBookingCreated } from '../types.guest'
+import { formatBookingDate } from '../utils/bookingDate'
 
 interface GuestBookingConfirmationProps {
   result: GuestBookingCreated
@@ -64,7 +65,7 @@ export function GuestBookingConfirmation({ result, email, onDone }: GuestBooking
           <div className="mt-2 flex justify-between gap-4">
             <dt className="text-gray-500">When</dt>
             <dd className="text-right font-medium text-gray-900">
-              {booking.scheduled_date}, {booking.time_slot_start.slice(0, 5)}–
+              {formatBookingDate(booking.scheduled_date)}, {booking.time_slot_start.slice(0, 5)}–
               {booking.time_slot_end.slice(0, 5)}
             </dd>
           </div>

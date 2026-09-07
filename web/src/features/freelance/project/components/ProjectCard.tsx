@@ -11,7 +11,11 @@ const STATUS_TONE: Record<ProjectStatus, 'neutral' | 'success' | 'warning' | 'da
 
 export function ProjectCard({ project }: { project: ProjectListItem }) {
   return (
-    <Link to={`/freelancer/projects/${project.id}`}>
+    // The canonical project URL is public, so this card resolves the same
+    // whether it is rendered on /projects or inside the freelancer
+    // dashboard — a hardcoded /freelancer/* path would bounce an anonymous
+    // visitor to the login page.
+    <Link to={`/projects/${project.id}`}>
       <Card className="flex flex-col gap-2 transition hover:shadow-md">
         <div className="flex items-start justify-between gap-2">
           <p className="font-medium text-gray-900">{project.title}</p>

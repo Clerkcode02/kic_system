@@ -4,6 +4,7 @@ import { Card, EmptyState, Select, Skeleton } from '@/components'
 import { useInfiniteBookings } from '../hooks/useBookings'
 import type { BookingStatus } from '../types'
 import { BOOKING_STATUS_LABELS, BookingStatusBadge } from './BookingStatusBadge'
+import { formatBookingDateShort } from '../utils/bookingDate'
 
 const STATUS_FILTER_OPTIONS = [
   { value: '', label: 'All statuses' },
@@ -75,7 +76,7 @@ export function BookingListPage() {
               <div>
                 <p className="font-medium text-gray-900">{booking.service.title}</p>
                 <p className="text-sm text-gray-500">
-                  {booking.provider.legal_name} · {booking.scheduled_date} ·{' '}
+                  {booking.provider.legal_name} · {formatBookingDateShort(booking.scheduled_date)} ·{' '}
                   {booking.time_slot_start.slice(0, 5)}–{booking.time_slot_end.slice(0, 5)}
                 </p>
                 <p className="text-xs text-gray-400">#{booking.booking_number}</p>

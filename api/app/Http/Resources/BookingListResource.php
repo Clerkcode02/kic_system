@@ -35,9 +35,13 @@ class BookingListResource extends JsonResource
                 'id' => $this->provider->id,
                 'legal_name' => $this->provider->legal_name,
             ],
+            // A guest booking has no customer row (SRS §6.1) — the contact
+            // triple is the identity, via Booking::contactName()/isGuest()
+            // rather than the caller branching on customer_id.
             'customer' => [
-                'id' => $this->customer->id,
-                'name' => $this->customer->name,
+                'id' => $this->customer_id,
+                'name' => $this->contactName(),
+                'is_guest' => $this->isGuest(),
             ],
             'created_at' => $this->created_at,
         ];

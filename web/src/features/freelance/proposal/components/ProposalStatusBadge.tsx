@@ -1,11 +1,11 @@
-import { Badge } from '@/components'
+import { StatusStamp, type StampRole } from '../../components'
 import type { ProposalStatus } from '../types'
 
-const STATUS_TONE: Record<ProposalStatus, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {
-  submitted: 'info',
-  shortlisted: 'warning',
-  accepted: 'success',
-  rejected: 'danger',
+const STATUS_ROLE: Record<ProposalStatus, StampRole> = {
+  submitted: 'active',
+  shortlisted: 'awaiting',
+  accepted: 'paid',
+  rejected: 'disputed',
   withdrawn: 'neutral',
 }
 
@@ -18,5 +18,5 @@ const STATUS_LABEL: Record<ProposalStatus, string> = {
 }
 
 export function ProposalStatusBadge({ status }: { status: ProposalStatus }) {
-  return <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Badge>
+  return <StatusStamp role={STATUS_ROLE[status]}>{STATUS_LABEL[status]}</StatusStamp>
 }

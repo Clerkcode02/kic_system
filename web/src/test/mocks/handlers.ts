@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { API_BASE_URL, API_VERSION_PATH } from '@/lib/api/config'
+import type { AuthUser } from '@/features/auth/types'
 
 /**
  * Baseline "happy path" handlers for the endpoints exercised by the
@@ -18,21 +19,26 @@ export const handlers = [
   http.get(`${API_BASE_URL}${API_VERSION_PATH}/auth/me`, () =>
     HttpResponse.json({ message: 'Unauthenticated.' }, { status: 401 }),
   ),
+
+  http.post(
+    `${API_BASE_URL}${API_VERSION_PATH}/auth/logout`,
+    () => new HttpResponse(null, { status: 204 }),
+  ),
 ]
 
 /** Test users, plus the handler override that signs one in. */
-export const testCustomer = {
+export const testCustomer: AuthUser = {
   id: 'user-1',
   name: 'Dana Okafor',
   email: 'dana@example.com',
   phone: '+14165550143',
-  role: 'customer' as const,
-  status: 'active' as const,
+  role: 'customer',
+  status: 'active',
   email_verified_at: '2026-01-01T00:00:00Z',
   created_at: '2026-01-01T00:00:00Z',
 }
 
-export function authenticatedAs(user = testCustomer) {
+export function authenticatedAs(user: AuthUser = testCustomer) {
   return http.get(`${API_BASE_URL}${API_VERSION_PATH}/auth/me`, () =>
     HttpResponse.json({ data: user }),
   )

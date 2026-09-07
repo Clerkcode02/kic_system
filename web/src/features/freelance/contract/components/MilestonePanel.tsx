@@ -1,12 +1,14 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import toast from 'react-hot-toast'
-import { Badge, Button, Skeleton } from '@/components'
+import { Button, Card, Skeleton } from '@/components'
 import { ApiError } from '@/lib/api'
 import { MilestoneEscrowPanel } from '@/features/payments'
+import { MoneyFigure, Perforation, StatusStamp } from '../../components'
 import { useDeliverableUpload } from '../hooks/useDeliverableUpload'
 import { useMilestoneDeliverables, useSubmitMilestone } from '../hooks/useContracts'
 import { SUBMITTABLE_STATUSES, type Milestone } from '../types'
 import { MilestoneStatusBadge } from './MilestoneStatusBadge'
+import { MilestoneTimeline } from './MilestoneTimeline'
 
 interface MilestonePanelProps {
   milestone: Milestone
@@ -55,77 +57,89 @@ export function MilestonePanel({ milestone, contractId }: MilestonePanelProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3 border-t border-gray-100 pt-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="font-medium text-gray-900">{milestone.title}</p>
-          <p className="text-sm text-gray-500">
-            ${milestone.amount} {milestone.currency} · Due {milestone.due_date}
-          </p>
-        </div>
-        <MilestoneStatusBadge status={milestone.status} />
-      </div>
-
-      {milestone.status === 'disputed' && milestone.rejection_reason && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          <p className="font-medium">Client requested changes:</p>
-          <p>{milestone.rejection_reason}</p>
-          <p className="mt-1 text-xs text-red-600">
-            Upload new deliverables below and resubmit for approval.
-          </p>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium text-gray-700">Deliverables</p>
-        {isLoading && <Skeleton className="h-10 rounded-md" />}
-        {!isLoading && (deliverables ?? []).length === 0 && (
-          <p className="text-sm text-gray-400">No deliverables uploaded yet.</p>
-        )}
-        <div className="flex flex-col gap-1">
-          {(deliverables ?? []).map((deliverable) => (
-            <label
-              key={deliverable.id}
-              className="flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm"
-            >
-              {canManage && (
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(deliverable.id)}
-                  onChange={() => toggleSelected(deliverable.id)}
-                />
-              )}
-              <span className="flex-1 text-gray-700">
-                {deliverable.description ?? deliverable.mime_type ?? 'File'}
-              </span>
-              {deliverable.scanned && <Badge tone="success">Scanned</Badge>}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {canManage && (
-        <div className="flex flex-col gap-2">
-          <input ref={fileInputRef} type="file" onChange={handleFileChange} />
-          {uploads.map((state) => (
-            <p key={state.fileName + state.progress} className="text-xs text-gray-500">
-              {state.fileName} — {state.status} {state.status === 'uploading' && `${state.progress}%`}
-              {state.status === 'error' && `: ${state.error}`}
+    <Card variant="ticket" className="!p-0 overflow-hidden">
+      <div className="flex flex-col gap-3 px-4 py-4 sm:px-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-semibold text-docket-ink">{milestone.title}</p>
+            <p className="font-mono text-sm tabular-nums text-docket-soft">
+              <MoneyFigure amount={milestone.amount} /> · due {milestone.due_date}
             </p>
-          ))}
-          <Button
-            type="button"
-            size="sm"
-            isLoading={isSubmitting}
-            onClick={handleSubmitForApproval}
-            className="self-start"
-          >
-            Submit for approval
-          </Button>
+          </div>
+          <MilestoneStatusBadge status={milestone.status} />
         </div>
-      )}
 
-      <MilestoneEscrowPanel milestone={milestone} contractId={contractId} />
-    </div>
+        <MilestoneTimeline status={milestone.status} />
+
+        {milestone.status === 'disputed' && milestone.rejection_reason && (
+          <div className="rounded-sm border-2 border-dashed border-stamp-disputed bg-stamp-disputed-tint p-3 text-sm text-stamp-disputed">
+            <p className="font-semibold">Client requested changes:</p>
+            <p>{milestone.rejection_reason}</p>
+            <p className="mt-1 text-xs opacity-90">
+              Upload new deliverables below and resubmit for approval.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <Perforation />
+
+      <div className="flex flex-col gap-3 px-4 py-4 sm:px-6">
+        <div className="flex flex-col gap-2">
+          <p className="font-mono text-xs font-bold uppercase tracking-widest text-docket-soft">
+            Deliverables
+          </p>
+          {isLoading && <Skeleton className="h-10 rounded-sm" />}
+          {!isLoading && (deliverables ?? []).length === 0 && (
+            <p className="text-sm text-docket-soft">No deliverables uploaded yet.</p>
+          )}
+          <div className="flex flex-col gap-1">
+            {(deliverables ?? []).map((deliverable) => (
+              <label
+                key={deliverable.id}
+                className="flex items-center gap-2 rounded-sm border border-dashed border-docket-line px-3 py-2 text-sm"
+              >
+                {canManage && (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(deliverable.id)}
+                    onChange={() => toggleSelected(deliverable.id)}
+                    className="accent-action"
+                  />
+                )}
+                <span className="flex-1 text-docket-ink">
+                  {deliverable.description ?? deliverable.mime_type ?? 'File'}
+                </span>
+                {deliverable.scanned && <StatusStamp role="paid" animate={false}>Scanned</StatusStamp>}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {canManage && (
+          <div className="flex flex-col gap-2">
+            <input ref={fileInputRef} type="file" onChange={handleFileChange} className="text-sm text-docket-soft" />
+            {uploads.map((state) => (
+              <p key={state.fileName + state.progress} className="font-mono text-xs text-docket-soft">
+                {state.fileName} — {state.status} {state.status === 'uploading' && `${state.progress}%`}
+                {state.status === 'error' && `: ${state.error}`}
+              </p>
+            ))}
+            <Button
+              type="button"
+              variant="ink"
+              size="sm"
+              isLoading={isSubmitting}
+              onClick={handleSubmitForApproval}
+              className="self-start"
+            >
+              Submit for approval
+            </Button>
+          </div>
+        )}
+
+        <MilestoneEscrowPanel milestone={milestone} contractId={contractId} />
+      </div>
+    </Card>
   )
 }

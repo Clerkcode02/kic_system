@@ -6,6 +6,7 @@ import type { WizardAddress, WizardContact, WizardSlot } from '@/stores/bookingW
 import { useCreateBooking, useCreateGuestBooking } from '../hooks/useCreateBooking'
 import { useMyAddresses } from '../hooks/useAddresses'
 import { formatTime, timeOf } from '../utils/slotTime'
+import { formatBookingDate } from '../utils/bookingDate'
 import type { GuestBookingCreated } from '../types.guest'
 
 interface ReviewStepProps {
@@ -128,7 +129,7 @@ export function ReviewStep({
         </div>
         <div className="flex justify-between gap-4">
           <span className="text-gray-500">Date</span>
-          <span className="font-medium text-gray-900">{date}</span>
+          <span className="text-right font-medium text-gray-900">{formatBookingDate(date)}</span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="text-gray-500">Time</span>

@@ -417,6 +417,23 @@ it('lists bookings scoped to the caller by role and includes status history on s
         ->assertJsonCount(2, 'data');
 
     forgetAuthGuards();
+    $this->withHeaders(authHeader($providerUser))
+        ->getJson("/api/v1/bookings/{$booking->id}")
+        ->assertOk()
+        ->assertJsonPath('data.id', $booking->id)
+        ->assertJsonPath('data.provider.id', $business->id)
+        ->assertJsonPath('data.customer.name', $customer->name)
+        ->assertJsonStructure(['data' => [
+            'service',
+            'provider',
+            'customer',
+            'service_address',
+            'status_history',
+            'attachments',
+            'quotations',
+        ]]);
+
+    forgetAuthGuards();
     $this->withHeaders(authHeader($customer))
         ->getJson("/api/v1/bookings/{$booking->id}")
         ->assertOk()

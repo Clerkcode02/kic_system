@@ -10,3 +10,46 @@ body {
   margin: 0;
   min-height: 100svh;
 }
+
+/* Trade Docket world (freelancer area): a punched tear-perforation strip.
+   The holes are cut through to the docket paper ground so the strip only
+   reads correctly sitting directly on `bg-docket-paper`. */
+.docket-perforation {
+  height: 0.5rem;
+  background-image: radial-gradient(circle, #ede4d2 0 3px, transparent 3.5px);
+  background-size: 14px 100%;
+  background-repeat: repeat-x;
+  background-position: center;
+}
+
+/* Trade Docket world: browser surfaces (selection, focus, scrollbar) theme
+   from the palette instead of shipping unstyled defaults. Scoped to the
+   freelancer area only. */
+.docket-scope ::selection {
+  background-color: #123b33;
+  color: #ede4d2;
+}
+
+.docket-scope ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.docket-scope ::-webkit-scrollbar-track {
+  background: #e2d5b8;
+}
+
+.docket-scope ::-webkit-scrollbar-thumb {
+  background-color: #a6976f;
+  border-radius: 9999px;
+  border: 3px solid #e2d5b8;
+}
+
+.docket-scope input[type='checkbox'],
+.docket-scope input[type='file'] {
+  accent-color: #123b33;
+}
+
+.docket-scope :focus-visible {
+  outline-color: #123b33;
+}

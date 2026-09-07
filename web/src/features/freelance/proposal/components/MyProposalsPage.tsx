@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
-import { Button, Card, EmptyState, Skeleton } from '@/components'
+import { Button, EmptyState, Skeleton } from '@/components'
 import { ApiError } from '@/lib/api'
+import { MoneyFigure } from '../../components'
 import { useInfiniteMyProposals, useWithdrawProposal } from '../hooks/useProposals'
 import { WITHDRAWABLE_STATUSES } from '../types'
 import { ProposalStatusBadge } from './ProposalStatusBadge'
@@ -40,12 +41,14 @@ export function MyProposalsPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6">
-      <h1 className="text-lg font-semibold text-gray-900">Your proposals</h1>
+      <h1 className="font-mono text-xs font-bold uppercase tracking-widest text-docket-soft">
+        Your proposals
+      </h1>
 
       {isLoading && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
           {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 rounded-lg" />
+            <Skeleton key={index} className="h-14 rounded-sm" />
           ))}
         </div>
       )}
@@ -57,47 +60,53 @@ export function MyProposalsPage() {
           title="No proposals yet"
           description="Browse projects and submit your first proposal."
           action={
-            <Link to="/freelancer/projects" className="text-sm font-medium text-blue-600 underline">
+            <Link to="/projects" className="text-sm font-medium text-action underline">
               Browse projects
             </Link>
           }
         />
       )}
 
-      <div className="flex flex-col gap-3">
-        {proposals.map((proposal) => (
-          <Card key={proposal.id} className="flex items-center justify-between gap-4">
-            <div>
-              <Link
-                to={`/freelancer/projects/${proposal.project_id}`}
-                className="font-medium text-gray-900 hover:underline"
-              >
-                {proposal.project?.title ?? 'Project'}
-              </Link>
-              <p className="text-sm text-gray-500">
-                ${proposal.proposed_amount} {proposal.currency} · {proposal.delivery_days} days
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <ProposalStatusBadge status={proposal.status} />
-              {WITHDRAWABLE_STATUSES.includes(proposal.status) && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  isLoading={isWithdrawing && withdrawingId === proposal.id}
-                  onClick={() => handleWithdraw(proposal.id)}
+      {proposals.length > 0 && (
+        <div className="flex flex-col divide-y divide-dashed divide-docket-line overflow-hidden rounded-sm border border-docket-line bg-docket-paper shadow-ticket">
+          {proposals.map((proposal) => (
+            <div
+              key={proposal.id}
+              className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6"
+            >
+              <div className="min-w-0">
+                <Link
+                  to={`/projects/${proposal.project_id}`}
+                  className="font-semibold text-docket-ink hover:underline"
                 >
-                  Withdraw
-                </Button>
-              )}
+                  {proposal.project?.title ?? 'Project'}
+                </Link>
+                <p className="font-mono text-sm tabular-nums text-docket-soft">
+                  <MoneyFigure amount={proposal.proposed_amount} /> · {proposal.delivery_days} days
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <ProposalStatusBadge status={proposal.status} />
+                {WITHDRAWABLE_STATUSES.includes(proposal.status) && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="border-docket-line bg-docket-paper text-docket-ink hover:bg-docket-well focus-visible:outline-action"
+                    isLoading={isWithdrawing && withdrawingId === proposal.id}
+                    onClick={() => handleWithdraw(proposal.id)}
+                  >
+                    Withdraw
+                  </Button>
+                )}
+              </div>
             </div>
-          </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       <div ref={sentinelRef} className="h-4" />
       {isFetchingNextPage && (
-        <p className="py-2 text-center text-sm text-gray-500">Loading more…</p>
+        <p className="py-2 text-center text-sm text-docket-soft">Loading more…</p>
       )}
     </div>
   )

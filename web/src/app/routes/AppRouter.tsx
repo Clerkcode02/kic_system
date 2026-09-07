@@ -54,6 +54,12 @@ const ServiceDetailView = lazy(() =>
 const BookingWizard = lazy(() =>
   import('@/features/booking/components/BookingWizard').then((m) => ({ default: m.BookingWizard })),
 )
+const ProjectBrowsePage = lazy(() =>
+  import('@/features/freelance/project').then((m) => ({ default: m.ProjectBrowsePage })),
+)
+const ProjectDetailPage = lazy(() =>
+  import('@/features/freelance/project').then((m) => ({ default: m.ProjectDetailPage })),
+)
 const CustomerDashboard = lazy(() =>
   import('./customer/CustomerDashboard').then((m) => ({ default: m.CustomerDashboard })),
 )
@@ -83,6 +89,14 @@ export function AppRouter() {
           <Route path="/services" element={<CatalogBrowsePage />} />
           <Route path="/services/:serviceId" element={<ServiceDetailView />} />
           <Route path="/book/:serviceId" element={<BookingWizard />} />
+          {/*
+            Browsing projects is ✅ for every role including anonymous
+            visitors (CLAUDE.md §4), and `GET /v1/projects` is already
+            public. Only *acting* on a project — submitting a proposal —
+            needs an account, which ProjectDetailPage gates on its own.
+          */}
+          <Route path="/projects" element={<ProjectBrowsePage />} />
+          <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
           <Route path="/track" element={<TrackBookingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterChoicePage />} />
