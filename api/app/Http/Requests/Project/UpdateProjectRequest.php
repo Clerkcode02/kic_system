@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Project;
 
+use App\Support\ValueObjects\SkillList;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateProjectRequest extends FormRequest
@@ -25,6 +26,8 @@ class UpdateProjectRequest extends FormRequest
             'budget_min' => ['sometimes', 'numeric', 'gt:0'],
             'budget_max' => ['sometimes', 'numeric', 'gt:0'],
             'deadline' => ['sometimes', 'date', 'after:today'],
+            'required_skills' => ['sometimes', 'array', 'max:'.SkillList::MAX_SKILLS],
+            'required_skills.*' => ['string', 'min:1', 'max:'.SkillList::MAX_SKILL_LENGTH],
         ];
     }
 }

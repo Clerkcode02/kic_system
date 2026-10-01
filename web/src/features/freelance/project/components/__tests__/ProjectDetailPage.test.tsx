@@ -17,6 +17,7 @@ const project: ProjectDetail = {
   currency: 'CAD',
   deadline: '2026-10-01',
   status: 'open',
+  required_skills: [],
   category: { id: 'cat-1', name: 'Web development', slug: 'web-development' },
   client: { id: 'user-9', name: 'Priya Raman' },
   contract: null,

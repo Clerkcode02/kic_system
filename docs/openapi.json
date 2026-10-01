@@ -4907,6 +4907,273 @@
                 }
             }
         },
+        "/v1/me/contracts": {
+            "get": {
+                "operationId": "me.contracts",
+                "tags": [
+                    "MyContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `ContractResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/ContractResource"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "milestones"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "next_cursor": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The \"cursor\" that points to the next set of items."
+                                                },
+                                                "prev_cursor": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The \"cursor\" that points to the previous set of items."
+                                                }
+                                            },
+                                            "required": [
+                                                "path",
+                                                "per_page",
+                                                "next_cursor",
+                                                "prev_cursor"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/v1/me/projects": {
+            "get": {
+                "operationId": "me.projects",
+                "tags": [
+                    "MyProject"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "$ref": "#/components/schemas/ProjectStatus"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `ProjectListResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/ProjectListResource"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "contract"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "next_cursor": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The \"cursor\" that points to the next set of items."
+                                                },
+                                                "prev_cursor": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The \"cursor\" that points to the previous set of items."
+                                                }
+                                            },
+                                            "required": [
+                                                "path",
+                                                "per_page",
+                                                "next_cursor",
+                                                "prev_cursor"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
         "/v1/notifications": {
             "get": {
                 "operationId": "notifications.index",
@@ -5438,6 +5705,18 @@
                         }
                     },
                     {
+                        "name": "skills[]",
+                        "in": "query",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 50
+                            }
+                        }
+                    },
+                    {
                         "name": "cursor",
                         "in": "query",
                         "schema": {
@@ -5604,6 +5883,21 @@
                         "description": "The project ID",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Comparing proposals is the whole point of this list, so the\nclient picks the axis. An allow-list rather than a raw column\nname \u2014 never interpolate a client-supplied sort into SQL.",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "newest",
+                                "amount_asc",
+                                "amount_desc",
+                                "delivery_asc",
+                                "rating_desc"
+                            ]
                         }
                     },
                     {
@@ -8084,17 +8378,25 @@
                     },
                     "customer": {
                         "type": "object",
+                        "description": "A guest booking has no customer row (SRS \u00a76.1) \u2014 the contact\ntriple is the identity, via Booking::contactName()/isGuest()\nrather than the caller branching on customer_id.",
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
                             },
                             "name": {
                                 "type": "string"
+                            },
+                            "is_guest": {
+                                "type": "boolean"
                             }
                         },
                         "required": [
                             "id",
-                            "name"
+                            "name",
+                            "is_guest"
                         ]
                     },
                     "created_at": {
@@ -8910,7 +9212,8 @@
                     "attachable_type": {
                         "type": "string",
                         "enum": [
-                            "dispute"
+                            "dispute",
+                            "project"
                         ]
                     },
                     "attachable_id": {
@@ -9922,6 +10225,32 @@
                             "name"
                         ]
                     },
+                    "required_skills": {
+                        "type": "array",
+                        "description": "Present only for callers that asked for the count (the client's\nown project list); the public browse list omits the key rather\nthan telling freelancers how much competition they have.",
+                        "items": {}
+                    },
+                    "proposals_count": {
+                        "type": "integer"
+                    },
+                    "contract": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "$ref": "#/components/schemas/ContractStatus"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "status"
+                        ]
+                    },
                     "created_at": {
                         "type": [
                             "string",
@@ -9939,6 +10268,7 @@
                     "deadline",
                     "status",
                     "category",
+                    "required_skills",
                     "created_at"
                 ],
                 "title": "ProjectListResource"
@@ -10004,6 +10334,14 @@
                             "name"
                         ]
                     },
+                    "required_skills": {
+                        "type": "array",
+                        "description": "Always an array for the client, even when the column is NULL \u2014\na reader iterating the list shouldn't have to null-check.",
+                        "items": {}
+                    },
+                    "proposals_count": {
+                        "type": "integer"
+                    },
                     "contract": {
                         "anyOf": [
                             {
@@ -10040,6 +10378,7 @@
                     "status",
                     "category",
                     "client",
+                    "required_skills",
                     "created_at",
                     "updated_at"
                 ],
@@ -10840,12 +11179,13 @@
             },
             "RequestUploadUrlRequest": {
                 "type": "object",
-                "description": "`attachable_type` is intentionally a short allow-list, not every\nregistered morph alias \u2014 only domains without their own dedicated\npresign flow (business documents, deliverables) belong here. Currently\njust dispute evidence, since disputes have no other upload path.",
+                "description": "`attachable_type` is intentionally a short allow-list, not every\nregistered morph alias \u2014 only domains without their own dedicated\npresign flow (business documents, deliverables) belong here: dispute\nevidence and project briefs.\n\nBoth entries authorize through `manageEvidence` on the resolved model, so\nadding a type here is only safe once that model's policy defines the\nability \u2014 otherwise the gate fails closed and every upload 403s.",
                 "properties": {
                     "attachable_type": {
                         "type": "string",
                         "enum": [
-                            "dispute"
+                            "dispute",
+                            "project"
                         ]
                     },
                     "attachable_id": {
@@ -11612,6 +11952,15 @@
                     "deadline": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "required_skills": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 50
+                        },
+                        "maxItems": 20
                     }
                 },
                 "required": [
@@ -11981,6 +12330,15 @@
                     "deadline": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "required_skills": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 50
+                        },
+                        "maxItems": 20
                     }
                 },
                 "title": "UpdateProjectRequest"

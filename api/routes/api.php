@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Admin\Verification\FreelancerVerificationControl
 use App\Http\Controllers\Api\V1\Customer\Booking\ConfirmBookingCompletionController;
 use App\Http\Controllers\Api\V1\Customer\Booking\StoreBookingController;
 use App\Http\Controllers\Api\V1\Customer\Project\CancelProjectController;
+use App\Http\Controllers\Api\V1\Customer\Project\MyProjectController;
 use App\Http\Controllers\Api\V1\Customer\Project\StoreProjectController;
 use App\Http\Controllers\Api\V1\Customer\Project\UpdateProjectController;
 use App\Http\Controllers\Api\V1\Customer\Proposal\HireProposalController;
@@ -60,6 +61,7 @@ use App\Http\Controllers\Api\V1\Shared\Business\ProviderAvailabilityController;
 use App\Http\Controllers\Api\V1\Shared\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Shared\Catalog\ServiceController;
 use App\Http\Controllers\Api\V1\Shared\Contract\ContractController;
+use App\Http\Controllers\Api\V1\Shared\Contract\MyContractController;
 use App\Http\Controllers\Api\V1\Shared\Contract\StoreContractMilestonesController;
 use App\Http\Controllers\Api\V1\Shared\Dispute\DisputeController;
 use App\Http\Controllers\Api\V1\Shared\Milestone\ApproveMilestoneController;
@@ -210,6 +212,19 @@ Route::prefix('v1/milestones')->name('milestones.')->middleware('api.protected')
     Route::get('{milestone}/deliverables', [MilestoneDeliverableController::class, 'index'])->name('deliverables.index');
     Route::post('{milestone}/deliverables/upload-url', RequestDeliverableUploadUrlController::class)->name('deliverables.upload-url');
     Route::post('{milestone}/deliverables', ConfirmDeliverableController::class)->name('deliverables.store');
+});
+
+/*
+ * The caller's own freelance work, from whichever side they're on. Kept off
+ * the public /v1/projects group deliberately: that group lists only Open
+ * projects to everyone, while these are scoped to the caller and span every
+ * status. `/me/contracts` serves both the client and the freelancer — the
+ * older /v1/freelancers/me/contracts stays as-is so existing clients keep
+ * working.
+ */
+Route::prefix('v1/me')->name('me.')->middleware('api.protected')->group(function () {
+    Route::get('projects', MyProjectController::class)->name('projects');
+    Route::get('contracts', MyContractController::class)->name('contracts');
 });
 
 Route::prefix('v1/me/addresses')->name('addresses.')->middleware('api.protected')->group(function () {

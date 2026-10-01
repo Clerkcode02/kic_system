@@ -36,6 +36,10 @@ class ProjectResource extends JsonResource
                 'id' => $this->client->id,
                 'name' => $this->client->name,
             ],
+            // Always an array for the client, even when the column is NULL —
+            // a reader iterating the list shouldn't have to null-check.
+            'required_skills' => $this->required_skills ?? [],
+            'proposals_count' => $this->whenCounted('proposals'),
             'contract' => $this->whenLoaded('contract', fn () => $this->contract !== null ? new ContractResource($this->contract) : null),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

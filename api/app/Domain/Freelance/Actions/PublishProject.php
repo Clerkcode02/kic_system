@@ -10,6 +10,7 @@ use App\Domain\Freelance\Models\Project;
 use App\Domain\User\Models\User;
 use App\Support\Action;
 use App\Support\ValueObjects\Money;
+use App\Support\ValueObjects\SkillList;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,7 +25,7 @@ use Illuminate\Validation\ValidationException;
 final class PublishProject implements Action
 {
     /**
-     * @param  array{category_id: string, title: string, description: string, budget_min: string|float, budget_max: string|float, deadline: string}  $data
+     * @param  array{category_id: string, title: string, description: string, budget_min: string|float, budget_max: string|float, deadline: string, required_skills?: array<int, string>}  $data
      */
     public function handle(User $client, array $data): Project
     {
@@ -32,6 +33,14 @@ final class PublishProject implements Action
         $budgetMin = Money::fromDecimal((string) $data['budget_min'], $currency);
         $budgetMax = Money::fromDecimal((string) $data['budget_max'], $currency);
         $deadline = CarbonImmutable::parse($data['deadline']);
+
+        // Normalized here rather than in the FormRequest so a stored value
+        // and a `?skills[]=` query can never disagree about casing or
+        // spacing (see SkillList). An empty list stays null — "no skills
+        // specified" is not the same assertion as "zero skills required".
+        $requiredSkills = isset($data['required_skills'])
+            ? SkillList::normalize($data['required_skills'])
+            : [];
 
         if ($budgetMin->minorUnits <= 0) {
             throw ValidationException::withMessages([
@@ -51,7 +60,7 @@ final class PublishProject implements Action
             ]);
         }
 
-        return DB::transaction(function () use ($client, $data, $budgetMin, $budgetMax, $currency, $deadline) {
+        return DB::transaction(function () use ($client, $data, $budgetMin, $budgetMax, $currency, $deadline, $requiredSkills) {
             $project = Project::create([
                 'client_id' => $client->id,
                 'category_id' => $data['category_id'],
@@ -61,6 +70,7 @@ final class PublishProject implements Action
                 'budget_max' => $budgetMax,
                 'currency' => $currency,
                 'deadline' => $deadline->toDateString(),
+                'required_skills' => $requiredSkills === [] ? null : $requiredSkills,
                 'status' => ProjectStatus::Open,
             ]);
 

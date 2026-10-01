@@ -30,6 +30,15 @@ class ProjectListResource extends JsonResource
                 'id' => $this->category->id,
                 'name' => $this->category->name,
             ],
+            // Present only for callers that asked for the count (the client's
+            // own project list); the public browse list omits the key rather
+            // than telling freelancers how much competition they have.
+            'required_skills' => $this->required_skills ?? [],
+            'proposals_count' => $this->whenCounted('proposals'),
+            'contract' => $this->whenLoaded('contract', fn () => $this->contract !== null ? [
+                'id' => $this->contract->id,
+                'status' => $this->contract->status,
+            ] : null),
             'created_at' => $this->created_at,
         ];
     }

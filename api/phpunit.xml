@@ -21,6 +21,14 @@
         </include>
     </source>
     <php>
+        <!-- PHP's default 128M is not enough for the whole suite in one
+             process: memory accumulates across ~460 tests and the
+             Architecture suite runs last, where Pest parses every file under
+             app/ with php-parser. The suite was sitting just under the limit
+             and a single new test file tipped it into a fatal error in
+             Lexer.php — raised here so `php artisan test` works without a
+             per-developer php.ini change. -->
+        <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

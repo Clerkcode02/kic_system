@@ -18,6 +18,13 @@ export interface Milestone {
   updated_at: string | null
 }
 
+/** One row of the client's milestone breakdown, before it is persisted. */
+export interface NewMilestoneInput {
+  title: string
+  amount: number
+  due_date: string
+}
+
 export interface ContractSummary {
   id: string
   project_id: string

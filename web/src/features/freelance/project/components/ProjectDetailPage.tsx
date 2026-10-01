@@ -103,6 +103,23 @@ export function ProjectDetailPage() {
           </span>
           <span>Deadline: {project.deadline}</span>
         </div>
+        {project.required_skills.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <h2 className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              Required skills
+            </h2>
+            <ul className="flex flex-wrap gap-1.5">
+              {project.required_skills.map((skill) => (
+                <li
+                  key={skill}
+                  className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700"
+                >
+                  {skill}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </Card>
 
       {project.contract && (

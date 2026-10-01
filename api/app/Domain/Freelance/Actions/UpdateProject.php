@@ -11,6 +11,7 @@ use App\Domain\User\Models\User;
 use App\Support\Action;
 use App\Support\ConflictException;
 use App\Support\ValueObjects\Money;
+use App\Support\ValueObjects\SkillList;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,7 +25,7 @@ use Illuminate\Validation\ValidationException;
 final class UpdateProject implements Action
 {
     /**
-     * @param  array{category_id?: string, title?: string, description?: string, budget_min?: string|float, budget_max?: string|float, deadline?: string}  $data
+     * @param  array{category_id?: string, title?: string, description?: string, budget_min?: string|float, budget_max?: string|float, deadline?: string, required_skills?: array<int, string>}  $data
      */
     public function handle(Project $project, User $actor, array $data): Project
     {
@@ -39,6 +40,13 @@ final class UpdateProject implements Action
         $budgetMin = isset($data['budget_min']) ? Money::fromDecimal((string) $data['budget_min'], $currency) : $project->budget_min;
         $budgetMax = isset($data['budget_max']) ? Money::fromDecimal((string) $data['budget_max'], $currency) : $project->budget_max;
         $deadline = isset($data['deadline']) ? CarbonImmutable::parse($data['deadline']) : null;
+
+        // Absent key means "leave as-is"; an explicitly empty array means
+        // "clear the skills", which is why this distinguishes the two rather
+        // than treating [] as absent.
+        $requiredSkills = array_key_exists('required_skills', $data)
+            ? SkillList::normalize($data['required_skills'])
+            : null;
 
         if ($budgetMin->minorUnits <= 0) {
             throw ValidationException::withMessages([
@@ -58,8 +66,8 @@ final class UpdateProject implements Action
             ]);
         }
 
-        return DB::transaction(function () use ($project, $actor, $data, $budgetMin, $budgetMax, $deadline) {
-            $before = $project->only(['category_id', 'title', 'description', 'deadline', 'status']);
+        return DB::transaction(function () use ($project, $actor, $data, $budgetMin, $budgetMax, $deadline, $requiredSkills) {
+            $before = $project->only(['category_id', 'title', 'description', 'deadline', 'required_skills', 'status']);
 
             $project->update([
                 'category_id' => $data['category_id'] ?? $project->category_id,
@@ -68,6 +76,9 @@ final class UpdateProject implements Action
                 'budget_min' => $budgetMin,
                 'budget_max' => $budgetMax,
                 'deadline' => $deadline?->toDateString() ?? $project->deadline,
+                'required_skills' => $requiredSkills === null
+                    ? $project->required_skills
+                    : ($requiredSkills === [] ? null : $requiredSkills),
             ]);
 
             $affectedFreelancerUserIds = $project->proposals()
@@ -78,7 +89,7 @@ final class UpdateProject implements Action
                 ->values()
                 ->all();
 
-            $after = $project->refresh()->only(['category_id', 'title', 'description', 'deadline', 'status']);
+            $after = $project->refresh()->only(['category_id', 'title', 'description', 'deadline', 'required_skills', 'status']);
 
             // Always dispatched (for the audit trail — see
             // ProjectScopeUpdated::auditAction()); the notification fan-out

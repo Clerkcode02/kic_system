@@ -61,6 +61,31 @@ class ProjectPolicy
     }
 
     /**
+     * Gates the brief/reference attachment lifecycle (presign, confirm,
+     * download URL) for this project.
+     *
+     * Deliberately narrower than {@see view}: browsing a project is open to
+     * everyone, but uploading a file against it must not be. A *competing*
+     * freelancer — one who has merely proposed, or hasn't — gets no access,
+     * so the audience is the owning client, the freelancer actually hired
+     * (which only exists once a Contract does), and admins with view rights.
+     */
+    public function manageEvidence(User $user, Project $project): bool
+    {
+        if ($this->isPlatformAdmin($user)) {
+            return $user->can(PermissionName::ProjectsView->value);
+        }
+
+        if ($project->client_id === $user->id) {
+            return true;
+        }
+
+        $hiredFreelancerUserId = $project->contract?->proposal?->freelancer?->user_id;
+
+        return $hiredFreelancerUserId !== null && $hiredFreelancerUserId === $user->id;
+    }
+
+    /**
      * Only the client reviews the hired freelancer. Whether the project is
      * actually completed, and the one-per-transaction rule, are enforced
      * by SubmitProjectReview — this only gates who may call it.

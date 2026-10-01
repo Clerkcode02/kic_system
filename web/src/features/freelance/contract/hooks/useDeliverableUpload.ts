@@ -1,10 +1,6 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  confirmDeliverable,
-  requestDeliverableUploadUrl,
-  uploadFileToS3,
-} from '../api/contractApi'
+import { confirmDeliverable, requestDeliverableUploadUrl, uploadFileToS3 } from '../api/contractApi'
 import { milestoneDeliverablesQueryKey } from './useContracts'
 import type { Deliverable } from '../types'
 

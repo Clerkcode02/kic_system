@@ -7,6 +7,7 @@ namespace App\Domain\Freelance\Models;
 use App\Domain\Catalog\Models\Category;
 use App\Domain\Dispute\Models\Dispute;
 use App\Domain\Freelance\Enums\ProjectStatus;
+use App\Domain\Platform\Models\Attachment;
 use App\Domain\Review\Models\Review;
 use App\Domain\User\Models\User;
 use App\Support\Casts\MoneyCast;
@@ -37,6 +38,7 @@ class Project extends Model
         'budget_max',
         'currency',
         'deadline',
+        'required_skills',
         'status',
     ];
 
@@ -49,6 +51,7 @@ class Project extends Model
             'budget_min' => MoneyCast::class,
             'budget_max' => MoneyCast::class,
             'deadline' => 'date',
+            'required_skills' => 'array',
             'status' => ProjectStatus::class,
         ];
     }
@@ -91,6 +94,18 @@ class Project extends Model
     public function reviews(): MorphMany
     {
         return $this->morphMany(Review::class, 'reviewable');
+    }
+
+    /**
+     * Project briefs and reference files. Shares the generic `attachments`
+     * table and the presign/confirm flow (ProjectPolicy::manageEvidence
+     * gates who may use it).
+     *
+     * @return MorphMany<Attachment, $this>
+     */
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 
     /**

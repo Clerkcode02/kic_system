@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api'
+import { uploadFileToS3 } from '@/lib/uploads'
 import type {
   ConfirmDeliverablePayload,
   ContractDetail,
@@ -7,10 +8,28 @@ import type {
   Deliverable,
   DeliverableUploadUrl,
   Milestone,
+  NewMilestoneInput,
 } from '../types'
+
+// Re-exported so existing callers keep importing it from the contract API
+// while the implementation lives in the shared lib/uploads module (the
+// project brief uploader needs the same PUT helper).
+export { uploadFileToS3 }
 
 export async function fetchMyContracts(cursor?: string): Promise<CursorPage<ContractSummary>> {
   const { data } = await apiClient.get<CursorPage<ContractSummary>>('/freelancer/me/contracts', {
+    params: { cursor },
+  })
+  return data
+}
+
+/**
+ * Contracts the caller is a party to, from either side. Distinct from
+ * `fetchMyContracts`, which is the freelancer-scoped route — this one serves
+ * the client's list too (ListMyContractsQuery matches on either party).
+ */
+export async function fetchContractsForMe(cursor?: string): Promise<CursorPage<ContractSummary>> {
+  const { data } = await apiClient.get<CursorPage<ContractSummary>>('/me/contracts', {
     params: { cursor },
   })
   return data
@@ -71,30 +90,29 @@ export async function approveMilestone(milestoneId: string): Promise<Milestone> 
   return data.data
 }
 
-export async function uploadFileToS3(
-  uploadUrl: DeliverableUploadUrl,
-  file: File,
-  onProgress: (percent: number) => void,
-): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest()
-    xhr.open('PUT', uploadUrl.url)
-    Object.entries(uploadUrl.headers).forEach(([key, value]) => {
-      xhr.setRequestHeader(key, value)
-    })
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        onProgress(Math.round((event.loaded / event.total) * 100))
-      }
-    }
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve()
-      } else {
-        reject(new Error(`Upload failed with status ${xhr.status}`))
-      }
-    }
-    xhr.onerror = () => reject(new Error('Upload failed.'))
-    xhr.send(file)
+/**
+ * Defines the whole milestone breakdown in one call — this is a full
+ * replace, not an append.
+ *
+ * `CreateContractMilestones` rejects the call unless the amounts sum exactly
+ * to the contract total (422 on `milestones`), and refuses to redefine once
+ * any milestone has left `pending` (409 `milestones_locked`).
+ */
+export async function createContractMilestones(
+  contractId: string,
+  milestones: NewMilestoneInput[],
+): Promise<Milestone[]> {
+  const { data } = await apiClient.post<{ data: Milestone[] }>(
+    `/contracts/${contractId}/milestones`,
+    { milestones },
+  )
+  return data.data
+}
+
+/** Sends a submitted milestone back to the freelancer with a reason. */
+export async function rejectMilestone(milestoneId: string, reason: string): Promise<Milestone> {
+  const { data } = await apiClient.post<{ data: Milestone }>(`/milestones/${milestoneId}/reject`, {
+    reason,
   })
+  return data.data
 }

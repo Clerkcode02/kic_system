@@ -12,6 +12,7 @@ const project: ProjectListItem = {
   currency: 'CAD',
   deadline: '2026-10-01',
   status: 'open',
+  required_skills: [],
   category: { id: 'cat-1', name: 'Web development' },
   created_at: '2026-08-01T00:00:00Z',
 }

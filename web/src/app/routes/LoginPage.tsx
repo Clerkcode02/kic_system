@@ -4,6 +4,7 @@ import { LoginForm } from '@/features/auth/components/LoginForm'
 import { Card } from '@/components'
 import { usePageMeta } from '@/lib/meta/usePageMeta'
 import { safeNextPath, withNext } from '@/lib/navigation/nextParam'
+import { dashboardPathForRole } from '@/lib/navigation/dashboardPath'
 
 const REGISTER_OPTIONS = [
   {
@@ -37,12 +38,16 @@ export function LoginPage() {
     description: 'Sign in to your KIC account, or create one as a customer, service provider or freelancer.',
   })
 
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
   const [searchParams] = useSearchParams()
-  const next = safeNextPath(searchParams.get('next'))
+  // An empty fallback distinguishes "no (or unsafe) ?next=" from a real
+  // destination, so the dashboard default below isn't overridden by one.
+  const requestedNext = safeNextPath(searchParams.get('next'), '')
+  const explicitNext = requestedNext === '' ? null : requestedNext
+  const next = explicitNext ?? '/'
 
   if (!isLoading && isAuthenticated) {
-    return <Navigate to={next} replace />
+    return <Navigate to={explicitNext ?? dashboardPathForRole(user?.role)} replace />
   }
 
   return (
@@ -61,7 +66,7 @@ export function LoginPage() {
             <h2 id="signin-heading" className="mb-5 text-base font-semibold text-gray-900">
               Sign in
             </h2>
-            <LoginForm redirectTo={next} />
+            <LoginForm redirectTo={explicitNext ?? undefined} />
             <div className="mt-5 text-sm">
               <Link
                 to="/forgot-password"

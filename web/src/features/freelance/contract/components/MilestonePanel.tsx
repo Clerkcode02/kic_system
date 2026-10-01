@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent } from 'react'
 import toast from 'react-hot-toast'
 import { Button, Card, Skeleton } from '@/components'
 import { ApiError } from '@/lib/api'
+import { useAuth } from '@/app/providers/useAuth'
 import { MilestoneEscrowPanel } from '@/features/payments'
 import { MoneyFigure, Perforation, StatusStamp } from '../../components'
 import { useDeliverableUpload } from '../hooks/useDeliverableUpload'
@@ -16,13 +17,18 @@ interface MilestonePanelProps {
 }
 
 export function MilestonePanel({ milestone, contractId }: MilestonePanelProps) {
+  const { user } = useAuth()
   const { data: deliverables, isLoading } = useMilestoneDeliverables(milestone.id)
   const { uploads, upload } = useDeliverableUpload(milestone.id)
   const { mutateAsync: submit, isPending: isSubmitting } = useSubmitMilestone(contractId)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  const canManage = SUBMITTABLE_STATUSES.includes(milestone.status)
+  // Status alone is not enough: uploading a deliverable and submitting for
+  // approval are the freelancer's actions (MilestonePolicy::submit requires
+  // the hired freelancer), so without the role check a client viewing this
+  // panel was offered controls the API would reject.
+  const canManage = user?.role === 'freelancer' && SUBMITTABLE_STATUSES.includes(milestone.status)
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -110,7 +116,11 @@ export function MilestonePanel({ milestone, contractId }: MilestonePanelProps) {
                 <span className="flex-1 text-docket-ink">
                   {deliverable.description ?? deliverable.mime_type ?? 'File'}
                 </span>
-                {deliverable.scanned && <StatusStamp role="paid" animate={false}>Scanned</StatusStamp>}
+                {deliverable.scanned && (
+                  <StatusStamp role="paid" animate={false}>
+                    Scanned
+                  </StatusStamp>
+                )}
               </label>
             ))}
           </div>
@@ -118,10 +128,19 @@ export function MilestonePanel({ milestone, contractId }: MilestonePanelProps) {
 
         {canManage && (
           <div className="flex flex-col gap-2">
-            <input ref={fileInputRef} type="file" onChange={handleFileChange} className="text-sm text-docket-soft" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileChange}
+              className="text-sm text-docket-soft"
+            />
             {uploads.map((state) => (
-              <p key={state.fileName + state.progress} className="font-mono text-xs text-docket-soft">
-                {state.fileName} — {state.status} {state.status === 'uploading' && `${state.progress}%`}
+              <p
+                key={state.fileName + state.progress}
+                className="font-mono text-xs text-docket-soft"
+              >
+                {state.fileName} — {state.status}{' '}
+                {state.status === 'uploading' && `${state.progress}%`}
                 {state.status === 'error' && `: ${state.error}`}
               </p>
             ))}

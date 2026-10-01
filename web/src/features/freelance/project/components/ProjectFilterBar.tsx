@@ -5,9 +5,11 @@ interface ProjectFilterBarProps {
   category: string
   budgetMin: string
   budgetMax: string
+  skills: string
   onCategoryChange: (category: string) => void
   onBudgetMinChange: (value: string) => void
   onBudgetMaxChange: (value: string) => void
+  onSkillsChange: (value: string) => void
   onApplyBudget: () => void
 }
 
@@ -15,9 +17,11 @@ export function ProjectFilterBar({
   category,
   budgetMin,
   budgetMax,
+  skills,
   onCategoryChange,
   onBudgetMinChange,
   onBudgetMaxChange,
+  onSkillsChange,
   onApplyBudget,
 }: ProjectFilterBarProps) {
   const { data: categories, isLoading } = useProjectCategories()
@@ -52,6 +56,18 @@ export function ProjectFilterBar({
         step="0.01"
         value={budgetMax}
         onChange={(event) => onBudgetMaxChange(event.target.value)}
+      />
+      {/*
+        Comma-separated free text rather than a picker: project skills are
+        free text, so there's no fixed vocabulary to offer. The server
+        matches *any* of the listed skills and normalizes casing/spacing.
+      */}
+      <Input
+        label="Skills"
+        name="skills"
+        placeholder="react, figma"
+        value={skills}
+        onChange={(event) => onSkillsChange(event.target.value)}
       />
       <Button type="button" variant="secondary" onClick={onApplyBudget}>
         Apply

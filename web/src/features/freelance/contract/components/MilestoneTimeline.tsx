@@ -62,7 +62,9 @@ export function MilestoneTimeline({ status }: { status: MilestoneStatus }) {
               <div
                 className={cn(
                   'mx-2 h-0 flex-1 border-t-2',
-                  index < currentIndex ? 'border-solid border-stamp-paid' : 'border-dashed border-docket-line',
+                  index < currentIndex
+                    ? 'border-solid border-stamp-paid'
+                    : 'border-dashed border-docket-line',
                 )}
               />
             )}

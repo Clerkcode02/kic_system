@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { useAuth } from '@/app/providers/useAuth'
 import { Button, Input } from '@/components'
 import { ApiError } from '@/lib/api'
+import { dashboardPathForRole } from '@/lib/navigation/dashboardPath'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -18,7 +19,8 @@ interface LoginFormProps {
   /**
    * Where to land after signing in. Set by /login from a validated `?next=`
    * so the guest → register → claim detour returns the user where they were
-   * (SRS §6.1). Falls back to the RoleGuard's saved location, then '/'.
+   * (SRS §6.1). Falls back to the RoleGuard's saved location, then the
+   * signed-in user's own dashboard.
    */
   redirectTo?: string
 }
@@ -27,7 +29,7 @@ export function LoginForm({ redirectTo }: LoginFormProps = {}) {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = redirectTo ?? (location.state as { from?: Location })?.from?.pathname ?? '/'
+  const savedFrom = (location.state as { from?: Location })?.from?.pathname
 
   const {
     register,
@@ -38,8 +40,10 @@ export function LoginForm({ redirectTo }: LoginFormProps = {}) {
 
   const onSubmit = async (values: LoginFormValues) => {
     try {
-      await login(values)
-      navigate(from, { replace: true })
+      const user = await login(values)
+      // Role is only known once the session exists, so the dashboard
+      // fallback is resolved here rather than at render time.
+      navigate(redirectTo ?? savedFrom ?? dashboardPathForRole(user.role), { replace: true })
     } catch (error) {
       if (error instanceof ApiError && error.kind === 'validation') {
         for (const [field, messages] of Object.entries(error.fieldErrors)) {

@@ -682,6 +682,42 @@ stateDiagram-v2
 
 Hiring is exclusive per project: `HireFreelancer` action wraps `Project` + `Proposal` update in a DB transaction with a row lock (`lockForUpdate`) on the project to prevent a race where two proposals are accepted concurrently; all other open proposals are auto-transitioned to `rejected` with a notification.
 
+### 10.1 Project posting (client side)
+
+A client publishes a project straight into `Open` — **there is no Draft state**. The state
+graph above is complete; `ProjectStatus` has exactly four cases. The create form holds
+unsaved input client-side rather than persisting a draft.
+
+**Project fields.** Beyond title, description, category, budget range and deadline:
+
+- `projects.required_skills` — a nullable `jsonb` array of normalized skill strings with a
+  GIN index. Normalization (lowercase, trimmed, internal whitespace collapsed, deduped)
+  lives in `App\Support\ValueObjects\SkillList` and is applied on both write and query, so
+  a stored value and a filter can never disagree on casing. Skills remain **free text on
+  both sides** of the marketplace — there is no controlled vocabulary, so "React" and
+  "ReactJS" are distinct skills. `NULL` means "not specified", which is deliberately
+  distinct from an empty array.
+- **Attachments** (briefs, reference files) reuse the polymorphic `attachments` table and
+  the presigned `uploads/presign` + `uploads/confirm` flow. `'project'` is on the
+  `ALLOWED_TYPES` allow-list of both upload FormRequests. Files attach *after* creation,
+  because a presigned upload needs the attachable's id and uploading first would orphan
+  objects whenever a client abandons the form.
+
+**Authorization.** `ProjectPolicy::manageEvidence` gates the attachment lifecycle and is
+deliberately narrower than `view`: browsing a project is public, so the audience is the
+owning client, the freelancer actually hired (which requires a `Contract` to exist), and
+admins. A merely-proposing freelancer has no access.
+
+**Client read path.** `GET /v1/me/projects` (`ListMyProjectsQuery`) returns the caller's own
+projects in every status, with `proposals_count`. It is separate from `ListProjectsQuery`,
+which is the public browse surface and hard-filters to `Open` — widening that query would
+leak a client's cancelled or in-progress work into anonymous browsing.
+`GET /v1/me/contracts` serves both parties to a contract.
+
+**Discovery.** `GET /v1/projects?skills[]=` matches projects requiring **any** of the listed
+skills (not all), served by the GIN index. An all-empty `skills[]` is treated as no filter
+rather than a validation error.
+
 ---
 
 ## 11. Notification Workflow

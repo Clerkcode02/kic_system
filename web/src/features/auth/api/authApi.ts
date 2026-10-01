@@ -14,9 +14,18 @@ export async function fetchCurrentUser(): Promise<AuthUser> {
   return data.data
 }
 
+/**
+ * `POST /auth/login` is the one auth endpoint whose envelope is nested:
+ * it returns `{ data: { user, token } }` (the token being the mobile/
+ * Bearer credential, CLAUDE.md §9.2) rather than the bare `{ data: user }`
+ * the register and /auth/me endpoints return.
+ */
 export async function login(payload: LoginPayload): Promise<AuthUser> {
-  const { data } = await apiClient.post<{ data: AuthUser }>('/auth/login', payload)
-  return data.data
+  const { data } = await apiClient.post<{ data: { user: AuthUser; token: string } }>(
+    '/auth/login',
+    payload,
+  )
+  return data.data.user
 }
 
 export async function logout(): Promise<void> {

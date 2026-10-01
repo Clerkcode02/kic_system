@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 
 class ConfirmUploadRequest extends FormRequest
 {
-    private const ALLOWED_TYPES = ['dispute'];
+    private const ALLOWED_TYPES = ['dispute', 'project'];
 
     public function authorize(): bool
     {
@@ -39,7 +39,7 @@ class ConfirmUploadRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'attachable_type' => ['required', Rule::in(['dispute'])],
+            'attachable_type' => ['required', Rule::in(self::ALLOWED_TYPES)],
             'attachable_id' => ['required', 'uuid'],
             'file_path' => ['required', 'string', 'max:1024'],
             'mime_type' => ['required', 'string', 'max:255'],

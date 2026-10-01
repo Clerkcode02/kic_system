@@ -2,7 +2,12 @@ import { Navigate, NavLink, Route, Routes, useParams } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 import { LogoutButton } from '@/components/LogoutButton'
 import { BookingListPage, BookingDetailPage } from '@/features/booking'
-import { ContractDetailPage } from '@/features/freelance/contract'
+import { ClientContractDetailPage, ClientContractListPage } from '@/features/freelance/contract'
+import {
+  ClientProjectDetailPage,
+  MyProjectsPage,
+  PostProjectPage,
+} from '@/features/freelance/project'
 
 const NAV_LINKS = [
   // Browsing and booking live on the public routes for everyone (SRS §6.1)
@@ -12,6 +17,11 @@ const NAV_LINKS = [
   // depending on who follows them.
   { to: '/services', label: 'Browse services' },
   { to: '/customer/bookings', label: 'My bookings' },
+  // The freelance side requires an account (CLAUDE.md §1), so unlike
+  // browsing services this lives under /customer/* rather than the public
+  // group — there is no guest path into posting a project.
+  { to: '/customer/projects', label: 'My projects' },
+  { to: '/customer/contracts', label: 'My contracts' },
 ]
 
 function CustomerNav() {
@@ -63,10 +73,11 @@ export function CustomerDashboard() {
         <Route path="book/:serviceId" element={<LegacyBookRedirect />} />
         <Route path="bookings" element={<BookingListPage />} />
         <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
-        {/* No customer-facing project/contract list exists yet (CLAUDE.md §11 — no such
-            endpoint to build a list from); this detail route exists so a contract link
-            from elsewhere (e.g. a future project page) resolves for the client role. */}
-        <Route path="contracts/:contractId" element={<ContractDetailPage />} />
+        <Route path="projects" element={<MyProjectsPage />} />
+        <Route path="projects/new" element={<PostProjectPage />} />
+        <Route path="projects/:projectId" element={<ClientProjectDetailPage />} />
+        <Route path="contracts" element={<ClientContractListPage />} />
+        <Route path="contracts/:contractId" element={<ClientContractDetailPage />} />
       </Routes>
     </div>
   )

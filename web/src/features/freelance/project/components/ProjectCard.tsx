@@ -25,6 +25,18 @@ export function ProjectCard({ project }: { project: ProjectListItem }) {
         <p className="text-sm text-gray-700">
           ${project.budget_min}–${project.budget_max} {project.currency}
         </p>
+        {project.required_skills.length > 0 && (
+          <ul className="flex flex-wrap gap-1.5">
+            {project.required_skills.map((skill) => (
+              <li
+                key={skill}
+                className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+              >
+                {skill}
+              </li>
+            ))}
+          </ul>
+        )}
         <p className="text-xs text-gray-400">Deadline {project.deadline}</p>
       </Card>
     </Link>

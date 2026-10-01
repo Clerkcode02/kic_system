@@ -11,12 +11,16 @@ use Illuminate\Validation\Rule;
 /**
  * `attachable_type` is intentionally a short allow-list, not every
  * registered morph alias — only domains without their own dedicated
- * presign flow (business documents, deliverables) belong here. Currently
- * just dispute evidence, since disputes have no other upload path.
+ * presign flow (business documents, deliverables) belong here: dispute
+ * evidence and project briefs.
+ *
+ * Both entries authorize through `manageEvidence` on the resolved model, so
+ * adding a type here is only safe once that model's policy defines the
+ * ability — otherwise the gate fails closed and every upload 403s.
  */
 class RequestUploadUrlRequest extends FormRequest
 {
-    private const ALLOWED_TYPES = ['dispute'];
+    private const ALLOWED_TYPES = ['dispute', 'project'];
 
     public function authorize(): bool
     {
@@ -45,7 +49,7 @@ class RequestUploadUrlRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'attachable_type' => ['required', Rule::in(['dispute'])],
+            'attachable_type' => ['required', Rule::in(self::ALLOWED_TYPES)],
             'attachable_id' => ['required', 'uuid'],
             'filename' => ['required', 'string', 'max:255'],
         ];

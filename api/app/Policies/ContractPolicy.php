@@ -13,6 +13,16 @@ class ContractPolicy
 {
     use GrantsAdminOversight;
 
+    /**
+     * Gates the caller's *own* contract list, which ListMyContractsQuery
+     * already scopes to contracts they are a party to — so this is a
+     * role-level check with no ownership component.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->can(PermissionName::ContractsView->value);
+    }
+
     public function view(User $user, Contract $contract): bool
     {
         if ($this->isPlatformAdmin($user)) {

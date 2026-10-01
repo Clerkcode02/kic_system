@@ -1012,6 +1012,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/contracts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["me.contracts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["me.projects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/notifications": {
         parameters: {
             query?: never;
@@ -1739,9 +1771,15 @@ export interface components {
                 id: string;
                 legal_name: string;
             };
+            /**
+             * @description A guest booking has no customer row (SRS §6.1) — the contact
+             *     triple is the identity, via Booking::contactName()/isGuest()
+             *     rather than the caller branching on customer_id.
+             */
             customer: {
-                id: string;
+                id: string | null;
                 name: string;
+                is_guest: boolean;
             };
             /** Format: date-time */
             created_at: string | null;
@@ -1965,7 +2003,7 @@ export interface components {
         /** ConfirmUploadRequest */
         ConfirmUploadRequest: {
             /** @enum {string} */
-            attachable_type: "dispute";
+            attachable_type: "dispute" | "project";
             /** Format: uuid */
             attachable_id: string;
             file_path: string;
@@ -2260,6 +2298,17 @@ export interface components {
                 id: string;
                 name: string;
             };
+            /**
+             * @description Present only for callers that asked for the count (the client's
+             *     own project list); the public browse list omits the key rather
+             *     than telling freelancers how much competition they have.
+             */
+            required_skills: unknown[];
+            proposals_count?: number;
+            contract?: {
+                id: string;
+                status: components["schemas"]["ContractStatus"];
+            } | null;
             /** Format: date-time */
             created_at: string | null;
         };
@@ -2282,6 +2331,12 @@ export interface components {
                 id: string;
                 name: string;
             };
+            /**
+             * @description Always an array for the client, even when the column is NULL —
+             *     a reader iterating the list shouldn't have to null-check.
+             */
+            required_skills: unknown[];
+            proposals_count?: number;
             contract?: components["schemas"]["ContractResource"] | null;
             /** Format: date-time */
             created_at: string | null;
@@ -2517,12 +2572,16 @@ export interface components {
          * RequestUploadUrlRequest
          * @description `attachable_type` is intentionally a short allow-list, not every
          *     registered morph alias — only domains without their own dedicated
-         *     presign flow (business documents, deliverables) belong here. Currently
-         *     just dispute evidence, since disputes have no other upload path.
+         *     presign flow (business documents, deliverables) belong here: dispute
+         *     evidence and project briefs.
+         *
+         *     Both entries authorize through `manageEvidence` on the resolved model, so
+         *     adding a type here is only safe once that model's policy defines the
+         *     ability — otherwise the gate fails closed and every upload 403s.
          */
         RequestUploadUrlRequest: {
             /** @enum {string} */
-            attachable_type: "dispute";
+            attachable_type: "dispute" | "project";
             /** Format: uuid */
             attachable_id: string;
             filename: string;
@@ -2750,6 +2809,7 @@ export interface components {
             budget_max: number;
             /** Format: date-time */
             deadline: string;
+            required_skills?: string[];
         };
         /** StoreProjectReviewRequest */
         StoreProjectReviewRequest: {
@@ -2850,6 +2910,7 @@ export interface components {
             budget_max?: number;
             /** Format: date-time */
             deadline?: string;
+            required_skills?: string[];
         };
         /** UpdateProviderAvailabilityRequest */
         UpdateProviderAvailabilityRequest: {
@@ -5423,6 +5484,91 @@ export interface operations {
             401: components["responses"]["AuthenticationException"];
         };
     };
+    "me.contracts": {
+        parameters: {
+            query?: {
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated set of `ContractResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: (components["schemas"]["ContractResource"] & Record<string, never>)[];
+                        links: {
+                            first: string | null;
+                            last: string | null;
+                            prev: string | null;
+                            next: string | null;
+                        };
+                        meta: {
+                            /** @description Base path for paginator generated URLs. */
+                            path: string | null;
+                            /** @description Number of items shown per page. */
+                            per_page: number;
+                            /** @description The "cursor" that points to the next set of items. */
+                            next_cursor: string | null;
+                            /** @description The "cursor" that points to the previous set of items. */
+                            prev_cursor: string | null;
+                        };
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "me.projects": {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["ProjectStatus"];
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated set of `ProjectListResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: (components["schemas"]["ProjectListResource"] & Record<string, never>)[];
+                        links: {
+                            first: string | null;
+                            last: string | null;
+                            prev: string | null;
+                            next: string | null;
+                        };
+                        meta: {
+                            /** @description Base path for paginator generated URLs. */
+                            path: string | null;
+                            /** @description Number of items shown per page. */
+                            per_page: number;
+                            /** @description The "cursor" that points to the next set of items. */
+                            next_cursor: string | null;
+                            /** @description The "cursor" that points to the previous set of items. */
+                            prev_cursor: string | null;
+                        };
+                    };
+                };
+            };
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
     "notifications.index": {
         parameters: {
             query?: never;
@@ -5677,6 +5823,7 @@ export interface operations {
                 category?: string;
                 budget_min?: number;
                 budget_max?: number;
+                "skills[]"?: string[];
                 cursor?: string;
             };
             header?: never;
@@ -5746,6 +5893,12 @@ export interface operations {
     "projects.proposals.index": {
         parameters: {
             query?: {
+                /**
+                 * @description Comparing proposals is the whole point of this list, so the
+                 *     client picks the axis. An allow-list rather than a raw column
+                 *     name — never interpolate a client-supplied sort into SQL.
+                 */
+                sort?: "newest" | "amount_asc" | "amount_desc" | "delivery_asc" | "rating_desc";
                 cursor?: string;
             };
             header?: never;
